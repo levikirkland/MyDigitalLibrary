@@ -1,0 +1,28 @@
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# Node (optional: if using JS tooling)
+node_modules/
+npm-debug.log
+
+# Python (optional: if using python scripts)
+__pycache__/
+*.pyc
+
+# Secrets and configs
+.env
+*.local.json
+*.secrets.json
+
+# Logs
+*.log
+
+# IDE settings
+.idea/
+*.swp
+.DS_Store
