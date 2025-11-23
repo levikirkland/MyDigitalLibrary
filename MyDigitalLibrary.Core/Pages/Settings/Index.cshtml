@@ -1,0 +1,29 @@
+@page
+@model MyDigitalLibrary.Core.Pages.Settings.IndexModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<div class="card">
+    <div class="card-body">
+        <h4>Account Settings</h4>
+        <p class="text-muted small">Set a public display name that will appear on reviews (e.g. "Rick"). You must be signed in to update settings.</p>
+        <form method="post">
+            <div class="mb-3">
+                <label asp-for="DisplayName" class="form-label">Public display name</label>
+                <input asp-for="DisplayName" class="form-control" placeholder="e.g. Rick" />
+                <span asp-validation-for="DisplayName" class="text-danger"></span>
+            </div>
+            <div class="mb-3 form-check">
+                <input asp-for="ShareReviews" class="form-check-input" id="shareReviews" />
+                <label class="form-check-label" for="shareReviews">Share my reviews publicly</label>
+            </div>
+            <button class="btn btn-primary" type="submit">Save</button>
+            @if (!string.IsNullOrEmpty(Model.Message)) { <div class="mt-2 alert alert-info">@Model.Message</div> }
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

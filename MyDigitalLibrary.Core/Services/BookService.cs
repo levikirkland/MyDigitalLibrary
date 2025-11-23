@@ -104,4 +104,16 @@ public class BookService : IBookService
             // Swallow exceptions here to avoid failing delete if storage cleanup has issues.
         }
     }
+
+    public async Task<Book[]> GetBooksByRulesAsync(IEnumerable<MyDigitalLibrary.Core.Models.Rule> rules, int userId)
+    {
+        var entities = await _repo.GetByRulesAsync(rules, userId);
+        return entities.Select(Map).ToArray();
+    }
+
+    public async Task<Book[]> GetBooksByIdsAsync(int[] ids)
+    {
+        var entities = await _repo.GetBooksByIdsAsync(ids);
+        return entities.Select(Map).ToArray();
+    }
 }

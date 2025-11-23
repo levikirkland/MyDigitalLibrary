@@ -4,6 +4,13 @@
     ViewData["Title"] = "Edit Book";
 }
 
+<style>
+    .star-rating { display:flex; align-items:center; gap:4px; }
+    .star-rating .star-input { display:none; }
+    .star-rating .star-label { font-size:1.4rem; cursor:pointer; color:#ccc; }
+    .star-rating .star-label.active { color:#f5c518; }
+</style>
+
 <div class="container py-4">
     <h2>Edit Book</h2>
 
@@ -73,8 +80,16 @@
                     </div>
 
                     <div class="col-sm-6">
-                        <label asp-for="Rating" class="form-label">Rating (1-5)</label>
-                        <input asp-for="Rating" type="number" min="0" max="5" class="form-control" />
+                        <label asp-for="Rating" class="form-label">Rating</label>
+                        <div class="star-rating" role="radiogroup" aria-label="Rating">
+                            @for (int r = 5; r >= 1; r--)
+                            {
+                                var checkedAttr = Model.Rating.HasValue && Model.Rating.Value == r ? "checked" : "";
+                                var activeClass = Model.Rating.HasValue && Model.Rating.Value >= r ? "active" : "";
+                                <input class="star-input" type="radio" id="rating@r" name="Rating" value="@r" @checkedAttr />
+                                <label class="star-label @activeClass" for="rating@r" title="@r"><i class="fa-solid fa-star"></i></label>
+                            }
+                        </div>
                     </div>
 
                     <div class="col-sm-6">
@@ -141,3 +156,29 @@
         </div>
     </form>
 </div>
+
+@section Scripts {
+    <script>
+        (function(){
+            // Make star labels reflect selection immediately
+            document.querySelectorAll('.star-label').forEach(function(lbl){
+                lbl.addEventListener('click', function(e){
+                    var forId = this.getAttribute('for');
+                    var input = document.getElementById(forId);
+                    if (!input) return;
+                    input.checked = true;
+
+                    // update active classes
+                    document.querySelectorAll('.star-label').forEach(function(l){ l.classList.remove('active'); l.style.color = '#ccc'; });
+
+                    // set active for all labels with value <= selected
+                    var val = parseInt(input.value, 10);
+                    document.querySelectorAll('.star-label').forEach(function(l){
+                        var num = parseInt(l.getAttribute('for').replace('rating',''));
+                        if (num <= val) { l.classList.add('active'); l.style.color = '#f5c518'; }
+                    });
+                });
+            });
+        })();
+    </script>
+}

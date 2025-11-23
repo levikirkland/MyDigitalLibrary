@@ -12,6 +12,7 @@ public class ReviewEntity
     public int UserId { get; set; }
     public int Rating { get; set; }
     public string? ReviewText { get; set; }
+    public bool IsPublic { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -15,6 +15,12 @@ public class AppDbContext : DbContext
     public DbSet<JobEntity> Jobs { get; set; } = default!;
     public DbSet<ReadingProgressEntity> ReadingProgress { get; set; } = default!;
     public DbSet<ReviewEntity> Reviews { get; set; } = default!;
+    public DbSet<PublicBookEntity> PublicBooks { get; set; } = default!;
+
+    // Collections
+    public DbSet<CollectionEntity> Collections { get; set; } = default!;
+    public DbSet<BookCollectionEntity> BookCollections { get; set; } = default!;
+    public DbSet<CollectionRuleEntity> CollectionRules { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,5 +31,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<BookEntity>().HasIndex(b => b.CoverFileId);
         modelBuilder.Entity<ReadingProgressEntity>().HasIndex(r => new { r.BookId, r.UserId }).IsUnique();
         modelBuilder.Entity<ReviewEntity>().HasIndex(r => new { r.BookId, r.UserId }).IsUnique();
+        modelBuilder.Entity<PublicBookEntity>().HasIndex(p => p.ReviewId).IsUnique();
+
+        modelBuilder.Entity<BookCollectionEntity>().HasIndex(bc => new { bc.BookId, bc.CollectionId }).IsUnique();
+        modelBuilder.Entity<CollectionRuleEntity>().HasIndex(r => new { r.CollectionId, r.RuleType, r.RuleValue });
     }
 }

@@ -1,0 +1,85 @@
+@page
+@model MyDigitalLibrary.Core.Pages.Discover.IndexModel
+@{
+    ViewData["Title"] = "Discover";
+}
+
+<div class="mb-4 d-flex align-items-center justify-content-between">
+    <div>
+        <h3 class="mb-0">Discover</h3>
+        <p class="text-muted mb-0">Explore recently added and popular books from the community.</p>
+    </div>
+    <form method="get" class="d-flex" role="search">
+        <input name="q" value="@Model.Query" class="form-control form-control-sm me-2" placeholder="Search titles, authors, tags..." />
+        <button class="btn btn-outline-secondary btn-sm" type="submit">Search</button>
+    </form>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-8">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Results</h5>
+                @if (Model.Books == null || !Model.Books.Any())
+                {
+                    <div class="text-muted">No books found.</div>
+                }
+                else
+                {
+                    <div class="row g-3">
+                        @foreach (var b in Model.Books)
+                        {
+                            <div class="col-6 col-md-4">
+                                <div class="card h-100" role="button" onclick="location.href='/Books/View/@b.Id'">
+                                    @if (!string.IsNullOrEmpty(b.CoverUrl))
+                                    {
+                                        <img src="@b.CoverUrl" class="card-img-top" style="height:160px;object-fit:cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:160px;">
+                                            <i class="fa-solid fa-book-open-blank-variant fa-2x text-muted"></i>
+                                        </div>
+                                    }
+                                    <div class="card-body p-2">
+                                        <div class="fw-semibold text-truncate">@b.Title</div>
+                                        <div class="text-muted small text-truncate">@b.Authors</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6>Popular</h6>
+                <ul class="list-unstyled mb-0">
+                    @foreach (var p in Model.Popular)
+                    {
+                        <li class="py-2 border-bottom">
+                            <a href="/Books/View/@p.Id" class="text-decoration-none">@p.Title</a>
+                            <div class="small text-muted">@p.Authors</div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h6>Tags</h6>
+                <div>
+                    @foreach (var tag in Model.Tags)
+                    {
+                        <a class="badge bg-light text-dark me-1 mb-1" href="/Books?SelectedTags=@Uri.EscapeDataString(tag)">@tag</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

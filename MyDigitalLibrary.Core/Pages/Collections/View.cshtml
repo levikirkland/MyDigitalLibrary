@@ -1,0 +1,140 @@
+@page "{id:int}"
+@model MyDigitalLibrary.Core.Pages.Collections.ViewModel
+@{
+    ViewData["Title"] = Model.Collection?.Name ?? "Collection";
+}
+
+@section Styles {
+    <style>
+    /* Scoped styles for bookcontainer only */
+    .collection-header { padding: 18px 0; border-bottom: 1px solid #eef1f4; margin-bottom: 18px; }
+    .collection-header .meta { color: #6f7a85; }
+
+    .bookcontainer{ display:block; width:100%; }
+    .book{ height:220px; display:flex; border-radius:8px; overflow:hidden; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    /* reduced cover width so bookinfo grows */
+    .bookpic{ flex:0 0 120px; width:120px; background-size:cover; background-position:center; }
+    .bookinfo{ flex:1 1 auto; padding:12px; display:flex; flex-direction:column; }
+    .bookinfo .title{ font-size:.9rem; font-weight:400; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+    .bookinfo .author{ color:#8b939c; font-size:.9rem; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bookinfo .series{ color:#6f7a85; font-size:.85rem; margin-bottom:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    /* push controls to bottom */
+    .controls-wrap { margin-top: auto; }
+
+    ul.controls{ display:flex; gap:8px; margin:0; padding:0; list-style:none; align-items:center; }
+    ul.controls li { list-style:none; }
+    ul.controls a, ul.controls button { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:6px; text-decoration:none; color:inherit; border: none; background:transparent; }
+    ul.controls a:hover, ul.controls button:hover { background: rgba(0,0,0,0.03); }
+    .rating { display:flex; gap:4px; align-items:center; margin-bottom:6px; }
+    .rating i { font-size:0.95rem; }
+    @@media (max-width:576px){ .book{ height:auto; flex-direction:column; } .bookpic{ width:100%; height:180px; flex:0 0 auto; } .bookinfo{ width:100%; } }
+    </style>
+}
+
+<div class="container-fluid">
+    @{
+        var count = Model.MemberCount ?? Model.Members?.Length ?? 0;
+    }
+
+    <div class="collection-header d-flex align-items-center justify-content-between">
+        <div>
+            <h1 class="h4 mb-0">@Model.Collection?.Name</h1>
+            <div class="meta small">@count book@(count == 1 ? "" : "s")</div>
+        </div>
+        <div class="text-end">
+            @if (Model.Collection != null)
+            {
+                <a class="btn btn-sm btn-outline-secondary me-2" href="/Collections/Edit/@Model.Collection.Id">Edit</a>
+                <form method="post" asp-page-handler="DeleteCollection" class="d-inline" onsubmit="return confirm('Delete this collection? This cannot be undone.');">
+                    <button class="btn btn-sm btn-danger">Delete</button>
+                </form>
+            }
+        </div>
+    </div>
+
+@if (Model.Members != null && Model.Members.Length > 0)
+{
+    <div class="row g-3">
+    @foreach (var m in Model.Members)
+    {
+        var b = Model.Books?.FirstOrDefault(x => x.Id == m.BookId);
+        var bUrl = b != null && !string.IsNullOrEmpty(b.CoverPath) ? b.CoverPath : "/images/placeholder-book.png";
+        var rating = b?.Rating ?? 0;
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="bookcontainer">
+                <div class="book">
+                    <div class="bookpic" style="background-image:url('@(bUrl)')"></div>
+                    <div class="bookinfo">
+                        <div class="title" title="@(b?.Title ?? "Unknown Title")">@(b?.Title ?? "Unknown Title")</div>
+                        <div class="author">@(b?.Authors ?? "Unknown Author")</div>
+                        @if (!string.IsNullOrEmpty(b?.Series))
+                        {
+                            <div class="series">@b.Series</div>
+                        }
+
+                        @* Rating *@
+                        <div class="rating" aria-label="Rating">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                if (i <= rating)
+                                {
+                                    <i class="fa-solid fa-star text-warning" aria-hidden="true"></i>
+                                }
+                                else
+                                {
+                                    <i class="fa-regular fa-star text-muted" aria-hidden="true"></i>
+                                }
+                            }
+                        </div>
+
+                        <div class="controls-wrap">
+                            <ul class="controls">
+                                <li>
+                                    <a href="/Books/Read/@m.BookId" title="Read" aria-label="Read">
+                                        <i class="fa-solid fa-download"></i>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/Books/Edit/@m.BookId" title="Edit" aria-label="Edit">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                </li>
+                                <li>
+                                    <form method="post" asp-page-handler="RemoveBook" class="m-0 confirm-remove" data-title="@(b?.Title ?? "Unknown Title")">
+                                        <input type="hidden" name="bookId" value="@m.BookId" />
+                                        <button type="submit" class="btn btn-link p-0 text-danger" title="Remove" aria-label="Remove">
+                                            <i class="fa-solid fa-book-open-reader"></i>
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    </div>
+}
+else
+{
+    <div class="p-4 text-muted">No members in this collection.</div>
+}
+</div>
+
+@section Scripts {
+    <script>
+        (function(){
+            // attach confirmation to remove forms
+            document.querySelectorAll('.confirm-remove').forEach(function(f){
+                f.addEventListener('submit', function(e){
+                    var title = f.getAttribute('data-title') || 'this book';
+                    if (!confirm('Remove "' + title + '" from the collection?')){
+                        e.preventDefault();
+                    }
+                });
+            });
+        })();
+    </script>
+}

@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="MyDigitalLibrary.Core/MyDigitalLibrary.Core.csproj" Id="02fc093f-b7b7-42b2-917d-3d92f7c54fc3" />
+  <Project Path="tests/MyDigitalLibrary.Core.Tests/MyDigitalLibrary.Core.Tests.csproj" />
 </Solution>

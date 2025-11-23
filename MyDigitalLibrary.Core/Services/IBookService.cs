@@ -11,4 +11,10 @@ public interface IBookService
     Task<Book> CreateBookAsync(BookEntity bookEntity); // added: create and return model
     Task<Book> UpdateBookAsync(BookEntity bookEntity);
     Task DeleteBookAsync(int id, int userId);
+
+    // New: filter by dynamic rules
+    Task<Book[]> GetBooksByRulesAsync(IEnumerable<MyDigitalLibrary.Core.Models.Rule> rules, int userId);
+
+    // New: fetch by ids
+    Task<Book[]> GetBooksByIdsAsync(int[] ids);
 }

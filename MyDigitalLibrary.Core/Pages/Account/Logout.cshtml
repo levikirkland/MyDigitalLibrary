@@ -1,0 +1,9 @@
+@page
+@model MyDigitalLibrary.Core.Pages.Account.LogoutModel
+@{
+    Layout = "_PublicLayout";
+}
+
+<form method="post">
+    @Html.AntiForgeryToken()
+</form>
