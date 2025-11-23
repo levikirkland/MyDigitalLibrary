@@ -5,6 +5,7 @@ using MyDigitalLibrary.Core.Data;
 using MyDigitalLibrary.Core.Repositories; // Add this line for data access
 using MyDigitalLibrary.Core.Services;
 using System.Reflection;
+using MyDigitalLibrary.Core.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,6 +84,13 @@ builder.Services.AddScoped<CalibreImporter>();
 // Register worker background service (uses AZURE_SERVICEBUS_CONNECTIONSTRING internally)
 builder.Services.AddHostedService<WorkerService>();
 
+// Register collection repository/service
+builder.Services.AddScoped<MyDigitalLibrary.Core.Repositories.ICollectionRepository, MyDigitalLibrary.Core.Repositories.CollectionRepository>();
+builder.Services.AddScoped<MyDigitalLibrary.Core.Services.ICollectionService, MyDigitalLibrary.Core.Services.CollectionService>();
+
+// Register review service
+builder.Services.AddScoped<MyDigitalLibrary.Core.Services.IReviewService, MyDigitalLibrary.Core.Services.ReviewService>();
+
 // Configure data protection keys directory (create folder and allow override via config)
 var keysPathFromConfig = builder.Configuration["DataProtection:KeyPath"];
 var keyDirPath = !string.IsNullOrEmpty(keysPathFromConfig)
@@ -102,37 +110,10 @@ builder.Services.AddDataProtection()
   .PersistKeysToFileSystem(new DirectoryInfo(keyDirPath))
   .SetApplicationName("MyBookShelf");
 
-// If started with "smoketest" run a programmatic smoke test and exit
-if (args.Length > 0 && args[0].Equals("smoketest", StringComparison.OrdinalIgnoreCase))
-{
-    var testPath = builder.Configuration["SMOKETEST_PATH"] ?? (args.Length > 1 ? args[1] : null);
-    if (string.IsNullOrEmpty(testPath) || !Directory.Exists(testPath))
-    {
-        Console.WriteLine("Usage: dotnet run -- smoketest <calibre-folder-path>  OR set SMOKETEST_PATH in configuration.");
-        return 0;
-    }
-
-    var appForTest = builder.Build();
-    using var scope = appForTest.Services.CreateScope();
-    var importer = scope.ServiceProvider.GetRequiredService<CalibreImporter>();
-    var testLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-    try
-    {
-        testLogger.LogInformation("Starting smoketest import for {Path}", testPath);
-        var result = await importer.ImportFromDirectoryAsync(testPath, userId: 1, importCovers: true, cancellation: CancellationToken.None);
-        Console.WriteLine($"Smoketest completed: Imported={result.Imported}, Skipped={result.Skipped}");
-        return 0;
-    }
-    catch (Exception ex)
-    {
-        testLogger.LogError(ex, "Smoketest failed");
-        Console.WriteLine("Smoketest failed: " + ex.Message);
-        return 2;
-    }
-}
-
 var app = builder.Build();
+
+// Register middleware for lock screen before authentication middleware runs
+app.UseMiddleware<LockScreenMiddleware>();
 
 // Log the data protection key path at startup so you can verify it's stable between runs
 var appLogger = app.Services.GetRequiredService<ILogger<Program>>();
@@ -162,3 +143,5 @@ app.MapRazorPages()
 
 app.Run();
 return 0;
+
+// No changes required in Program.cs for new PublicBookEntity registration as it's handled by AppDbContext. Kept for audit.

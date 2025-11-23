@@ -11,13 +11,33 @@
                 <i class="fa-solid fa-book-open-page-variant me-2"></i>
                 Book Details
             </h5>
-            <div class="ms-auto">
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <form method="post" asp-page-handler="AddToCollection" class="d-flex align-items-center gap-2">
+                    <select name="collectionId" class="form-select form-select-sm" required id="collectionSelect">
+                        <option value="" disabled selected>Add to collection</option>
+                        @if (Model.Collections != null)
+                        {
+                            foreach (var col in Model.Collections)
+                            {
+                                <option value="@col.Id">@col.Name</option>
+                            }
+                        }
+                    </select>
+                    <button class="btn btn-outline-primary btn-sm" type="submit">Add</button>
+                </form>
+
                 <a class="btn btn-outline-secondary btn-sm" href="/Books/Edit/@Model.Book?.Id">Edit</a>
                 <a class="btn btn-secondary btn-sm ms-2" href="/Books">Back to list</a>
             </div>
         </div>
 
         <div class="modal-body p-4">
+
+            @if (!string.IsNullOrEmpty(Model.Message))
+            {
+                <div class="alert alert-info">@Model.Message</div>
+            }
+
             <div class="row">
                 <div class="col-md-4 text-center">
                     @if (!string.IsNullOrEmpty(Model.Book?.CoverUrl))
@@ -147,6 +167,121 @@
                         </div>
                     }
 
+                    @* Reviews section *@
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div>
+                                    <h5 class="mb-0">Reviews</h5>
+                                    <div class="small text-muted">@Model.ReviewCount review(s) • Average: @String.Format("{0:0.0}", Model.AverageRating)</div>
+                                </div>
+                                <div class="text-end">
+                                    @for (int i = 0; i < (int)Math.Round(Model.AverageRating); i++)
+                                    {
+                                        <i class="fa-solid fa-star text-warning"></i>
+                                    }
+                                </div>
+                            </div>
+
+                            @if (User?.Identity?.IsAuthenticated == true)
+                            {
+                                <div class="mb-3">
+                                    <div class="accordion" id="reviewAccordion">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingReview">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseReview" aria-expanded="false" aria-controls="collapseReview">
+                                                    @if (Model.UserReview == null) { <span>Write a review</span> } else { <span>Update your review</span> }
+                                                </button>
+                                            </h2>
+                                            <div id="collapseReview" class="accordion-collapse collapse" aria-labelledby="headingReview" data-bs-parent="#reviewAccordion">
+                                                <div class="accordion-body">
+                                                    <form method="post" asp-page-handler="SubmitReview">
+                                                        <div class="row g-2 align-items-center">
+                                                            <div class="col-auto">
+                                                                <label class="form-label small mb-0">Rating</label>
+                                                                <select name="rating" class="form-select form-select-sm" required>
+                                                                    @for (int r = 1; r <= 5; r++)
+                                                                    {
+                                                                        if (Model.UserReview?.Rating == r)
+                                                                        {
+                                                                            <option value="@r" selected>@r</option>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <option value="@r">@r</option>
+                                                                        }
+                                                                    }
+                                                                </select>
+                                                            </div>
+                                                            <div class="col">
+                                                                <label class="form-label small mb-0">Review</label>
+                                                                <textarea name="reviewText" class="form-control form-control-sm" rows="3">@Model.UserReview?.ReviewText</textarea>
+                                                            </div>
+                                                            <div class="col-12 mt-2">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input" type="checkbox" value="true" id="makePrivate" name="makePrivate" @(Model.UserReview != null && !Model.UserReview.IsPublic ? "checked" : "") />
+                                                                    <label class="form-check-label" for="makePrivate">Make private</label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-auto d-flex gap-2 mt-2">
+                                                                <button class="btn btn-primary btn-sm" type="submit">Save</button>
+                                                                @if (Model.UserReview != null)
+                                                                {
+                                                                    <form method="post" asp-page-handler="DeleteReview" onsubmit="return confirm('Delete your review?');" class="d-inline">
+                                                                        <button class="btn btn-outline-danger btn-sm" type="submit">Delete</button>
+                                                                    </form>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mb-3 small text-muted">Sign in to leave a review. <a href="/Account/Login">Sign in</a></div>
+                            }
+
+                            <hr />
+
+                            @if (Model.Reviews?.Any() == true)
+                            {
+                                foreach (var r in Model.Reviews.OrderByDescending(x => x.UpdatedAt))
+                                {
+                                    <div class="mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-2">
+                                                <strong>@r.DisplayName</strong>
+                                                <div class="small text-muted">@r.UpdatedAt.ToString("yyyy-MM-dd")</div>
+                                            </div>
+                                            <div class="ms-auto text-end">
+                                                @if (!r.IsPublic)
+                                                {
+                                                    <div class="small text-muted"><i class="fa-solid fa-lock"></i> Private</div>
+                                                }
+                                                else
+                                                {
+                                                    <div></div>
+                                                }
+                                                <div>
+                                                    @for (int s = 0; s < r.Rating; s++) { <i class="fa-solid fa-star text-warning"></i> }
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(r.ReviewText)) { <div class="mt-1">@r.ReviewText</div> }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-muted small">No reviews yet.</div>
+                            }
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -183,4 +318,26 @@
     </div>
 </div>
 
-<!-- server-side form used for adding to collection; no client fetch required -->
+@section Scripts {
+    <script>
+        (function(){
+            // If only one collection exists, auto-select it for convenience
+            var sel = document.getElementById('collectionSelect');
+            if (!sel) return;
+            // find number of non-placeholder options
+            var count = 0; var firstVal = null;
+            for (var i=0;i<sel.options.length;i++){
+                var v = sel.options[i].value;
+                if (v){ count++; if (firstVal==null) firstVal=v; }
+            }
+            if (count===1){ sel.value = firstVal; }
+
+            // open accordion if user has existing review to make it visible for editing
+            var hasReview = '@(Model.UserReview != null)';
+            if (hasReview === 'True'){
+                var collapse = document.getElementById('collapseReview');
+                if (collapse) new bootstrap.Collapse(collapse, { toggle: true });
+            }
+        })();
+    </script>
+}

@@ -8,4 +8,5 @@ public interface IAuthService
     Task<(bool Success, string? Error, User? User, string? Token)> Login(string email, string password);
     User? GetUserById(int userId);
     int? ValidateToken(string token);
+    User? GetFullUserById(int userId);
 }

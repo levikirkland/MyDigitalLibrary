@@ -8,4 +8,5 @@ public class User
     public string? Role { get; set; }
     public string? DisplayName { get; set; }
     public string? Features { get; set; }
+    public bool ShareReviews { get; set; }
 }

@@ -1,0 +1,103 @@
+@* Top navigation partial used by layouts *@
+@using Microsoft.AspNetCore.Http
+@using MyDigitalLibrary.Core.Services
+@inject IAuthService AuthService
+@{
+    var userName = "Guest";
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    if (isAuthenticated)
+    {
+        var idClaim = User.FindFirst("userId")?.Value;
+        if (int.TryParse(idClaim, out var uid))
+        {
+            var full = AuthService.GetFullUserById(uid);
+            if (full != null)
+            {
+                userName = string.IsNullOrEmpty(full.DisplayName) ? full.Email : full.DisplayName;
+            }
+            else
+            {
+                userName = User.Identity?.Name ?? "User";
+            }
+        }
+        else
+        {
+            userName = User.Identity?.Name ?? "User";
+        }
+    }
+}
+<nav class="container navbar navbar-expand-lg navbar-light">
+    @await Html.PartialAsync("_BrandPartial")
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="topNav">
+        <ul class="navbar-nav me-auto align-items-center">
+            @if (isAuthenticated)
+            {
+                <li class="nav-item">
+                    <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                        <li class="nav-item" role="presentation"><a class="nav-link" href="~/Books">Library</a></li>
+                        <li class="nav-item" role="presentation"><a class="nav-link" href="~/Discover">Discover</a></li>
+                        <li class="nav-item" role="presentation"><a class="nav-link" href="~/Collections">Collections</a></li>
+                        <li class="nav-item d-none d-md-block" role="presentation"><a class="nav-link" href="~/Admin">Admin</a></li>
+                    </ul>
+                </li>
+            }
+        </ul>
+
+        <div class="d-flex align-items-center gap-2">
+            @if (isAuthenticated)
+            {
+                <div class="dropdown">
+                    <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-regular fa-user fa-lg text-muted me-2" aria-hidden="true"></i>
+                        <span class="d-none d-sm-inline">@userName</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                        <li class="px-3 py-2">
+                            <div class="fw-bold">@userName</div>
+                            <div class="text-muted small">Account Settings</div>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="px-3">
+                            <div class="text-caption">Storage</div>
+                            <div class="px-2 py-1">
+                                <div class="progress" style="height:8px;border-radius:6px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width:40%"></div>
+                                </div>
+                                <div class="small text-muted mt-1">40 GB / 100 GB <span class="badge bg-success ms-1">Premium</span></div>
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="~/Settings">Settings</a></li>
+                        <li>
+                            @* Lock screen form: POST to /Account/Lock?handler=Set *@
+                            <form method="post" asp-page="/Account/Lock" asp-page-handler="Set" class="m-0">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="dropdown-item d-flex align-items-center">
+                                    <i class="fa-solid fa-lock me-2" aria-hidden="true"></i>
+                                    Lock screen
+                                </button>
+                            </form>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="post" asp-page="/Account/Logout" class="m-3">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-sm w-100">Logout</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            }
+            else
+            {
+                <a class="btn btn-outline-primary btn-sm" href="~/Account/Login">Sign in</a>
+                <a class="btn btn-primary btn-sm ms-2" href="~/Account/Register">Sign up</a>
+            }
+        </div>
+    </div>
+</nav>

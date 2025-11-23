@@ -15,6 +15,8 @@ public class UserEntity
     public string? Role { get; set; }
     public string? Features { get; set; }
     public bool IsActive { get; set; } = true;
+    public string? DisplayName { get; set; }
+    public bool ShareReviews { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

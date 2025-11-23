@@ -51,6 +51,19 @@ public class AuthService : IAuthService
         return new User { Id = entity.Id, Email = entity.Email, Role = entity.Role };
     }
 
+    public User? GetFullUserById(int userId)
+    {
+        var entity = _db.Users.FirstOrDefault(u => u.Id == userId);
+        if (entity == null) return null;
+        return new User {
+            Id = entity.Id,
+            Email = entity.Email,
+            Role = entity.Role,
+            DisplayName = entity.DisplayName,
+            ShareReviews = entity.ShareReviews
+        };
+    }
+
     public int? ValidateToken(string token)
     {
         try

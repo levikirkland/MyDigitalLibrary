@@ -1,0 +1,51 @@
+﻿@page
+@model MyDigitalLibrary.Core.Pages.Collections.IndexModel
+@{
+    ViewData["Title"] = "Collections";
+}
+
+<div class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="mb-0 fw-bold">Collections</h2>
+        <a class="btn btn-primary" href="/Collections/Edit">New Collection</a>
+    </div>
+
+    <div class="row g-3">
+        @foreach (var c in Model.Collections)
+        {
+            <div class="col-xl-3 col-sm-6 col-12">
+                <div class="card">
+                  <div class="card-content">
+                    <div class="card-body">
+                      <div class="media d-flex">
+                        <div class="align-self-center">
+                          <i class="icon-pencil primary font-large-2 float-left"></i>
+                        </div>
+                        <div class="media-body text-right">
+                          <h3>@(Model.Counts.ContainsKey(c.Id) ? Model.Counts[c.Id] : 0)</h3>
+                          <span>@c.Name</span>
+                        </div>
+                      </div>
+
+                      <div class="mt-3 d-flex justify-content-between">
+                        <div>
+                            <a class="btn btn-sm btn-outline-primary me-1" href="/Collections/View/@c.Id">View</a>
+                            <a class="btn btn-sm btn-outline-secondary me-1" href="/Collections/Edit?id=@c.Id">Edit</a>
+                        </div>
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" onsubmit="return confirm('Delete this collection?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Collections.Any())
+    {
+        <div class="p-4 text-muted">No collections yet.</div>
+    }
+</div>
