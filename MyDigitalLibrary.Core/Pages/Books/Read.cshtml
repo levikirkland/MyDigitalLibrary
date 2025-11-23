@@ -1,0 +1,287 @@
+@page "{id:int}"
+@model MyDigitalLibrary.Core.Pages.Books.ReadModel
+@{
+    ViewData["Title"] = "Read Book";
+}
+
+<div class="container-fluid p-0" style="height:100vh;">
+    <div class="reader-toolbar d-flex align-items-center justify-content-between p-2 border-bottom bg-white">
+        <div class="d-flex align-items-center gap-3">
+            <a class="btn btn-link" href="/Books/View/@Model.Book?.Id">Back</a>
+            <span class="fw-semibold" id="book-title">@Model.Book?.Title</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button id="prevBtn" class="btn btn-outline-secondary btn-sm">Prev</button>
+            <button id="nextBtn" class="btn btn-outline-secondary btn-sm">Next</button>
+            <button id="decreaseFont" class="btn btn-outline-secondary btn-sm">A-</button>
+            <button id="increaseFont" class="btn btn-outline-secondary btn-sm">A+</button>
+            <button id="toggleTheme" class="btn btn-outline-secondary btn-sm">Theme</button>
+            <button id="lightsOutBtn" class="btn btn-dark btn-sm" title="Lights Out">Lights Out</button>
+            <a class="btn btn-outline-primary" href="/Books/Download/@Model.Book?.Id">Download</a>
+        </div>
+    </div>
+
+    <div class="reader-wrapper d-flex">
+        <div id="lightsOutOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:15; transition:opacity .25s;"></div>
+        <button class="reader-nav reader-nav-left btn btn-link" id="navLeft"><i class="fa-solid fa-chevron-left fa-2x"></i></button>
+        <div id="reader" class="flex-grow-1" style="max-width:900px; margin:0 auto; height:calc(100vh - 120px); background-color:#f6f8fb; box-shadow:0 6px 18px rgba(0,0,0,0.08); border-radius:8px; overflow:hidden; position:relative; z-index:20;"></div>
+        <button class="reader-nav reader-nav-right btn btn-link" id="navRight"><i class="fa-solid fa-chevron-right fa-2x"></i></button>
+    </div>
+
+    <div class="p-2 border-top bg-white d-flex align-items-center gap-3">
+        <div>Page: <span id="currentPage">0</span> / <span id="totalPages">0</span></div>
+        <div style="flex:1">
+            <input id="progressRange" type="range" min="0" max="100" value="0" style="width:100%" />
+        </div>
+        <div><span id="progressPercent">0%</span></div>
+    </div>
+
+    <style>
+        .reader-wrapper { position:relative; align-items:center; gap:12px; padding:16px 8px; }
+        .reader-nav { position:relative; z-index:20; color:rgba(0,0,0,0.6); }
+        .reader-nav-left { margin-left:8px; }
+        .reader-nav-right { margin-right:8px; }
+        .reader-toolbar { height:56px; }
+        @@media (max-width:991px) { .reader-wrapper { padding:8px 4px; } #reader { max-width:100%; height:calc(100vh - 160px); } }
+    </style>
+
+    <script>
+        // Try multiple CDN sources for JSZip until global is available
+        function loadScript(url) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = url;
+                s.async = false;
+                s.onload = () => resolve(url);
+                s.onerror = () => reject(new Error('Failed to load ' + url));
+                document.head.appendChild(s);
+            });
+        }
+
+        async function loadJsZipFromCdns() {
+            const cdns = [
+                'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+                'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
+                'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js'
+            ];
+
+            for (const url of cdns) {
+                try {
+                    await loadScript(url);
+                    if (window.JSZip) return true;
+                } catch (e) {
+                    console.warn('Failed to load JSZip from', url, e);
+                }
+            }
+
+            try {
+                const mod = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.esm.min.js');
+                window.JSZip = mod && (mod.default || mod.JSZip || mod);
+                return !!window.JSZip;
+            } catch (e) {
+                console.warn('ESM import failed', e);
+            }
+
+            return false;
+        }
+
+        (async function(){
+            const container = document.getElementById('reader');
+            try {
+                const ok = await loadJsZipFromCdns();
+                if (!ok) throw new Error('JSZip not available after trying CDNs');
+
+                await loadScript('https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js');
+            } catch (e) {
+                console.error('Failed to load reader libraries', e);
+                container.innerHTML = '<div class="p-4">Failed to load reader libraries: ' + e.message + '</div>';
+                return;
+            }
+
+            const bookId = '@Model.Book?.Id';
+            const bookUrl = '/Books/Fetch?id=' + encodeURIComponent(bookId);
+
+            let epubBook, rendition;
+            let fontSize = 100;
+            let isDark = false;
+            let cfiLocation = null;
+
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const increaseFont = document.getElementById('increaseFont');
+            const decreaseFont = document.getElementById('decreaseFont');
+            const toggleTheme = document.getElementById('toggleTheme');
+            const currentPageEl = document.getElementById('currentPage');
+            const totalPagesEl = document.getElementById('totalPages');
+            const progressRange = document.getElementById('progressRange');
+            const progressPercent = document.getElementById('progressPercent');
+            const navLeft = document.getElementById('navLeft');
+            const navRight = document.getElementById('navRight');
+            const lightsOutBtn = document.getElementById('lightsOutBtn');
+            const lightsOutOverlay = document.getElementById('lightsOutOverlay');
+
+            function setLightsOut(on) {
+                if (on) {
+                    lightsOutOverlay.style.display = 'block';
+                    // force reflow to animate opacity
+                    lightsOutOverlay.style.opacity = '0';
+                    requestAnimationFrame(() => { lightsOutOverlay.style.opacity = '1'; });
+                    lightsOutBtn.classList.add('active');
+                } else {
+                    lightsOutOverlay.style.opacity = '0';
+                    lightsOutBtn.classList.remove('active');
+                    lightsOutOverlay.addEventListener('transitionend', function hide() { lightsOutOverlay.style.display = 'none'; lightsOutOverlay.removeEventListener('transitionend', hide); });
+                }
+            }
+
+            lightsOutBtn.addEventListener('click', () => {
+                const isOn = lightsOutOverlay.style.display === 'block';
+                setLightsOut(!isOn);
+            });
+
+            // Exit lights-out on Escape
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setLightsOut(false); });
+
+            function applyTheme() {
+                if (!rendition) return;
+                if (isDark) {
+                    rendition.themes.default({ body: { background: '#1e1e1e !important', color: '#e0e0e0 !important' }, 'p, div, span, li': { color: '#e0e0e0 !important' }, a: { color: '#90caf9 !important' } });
+                } else {
+                    rendition.themes.default({ body: { background: '#fafafa !important', color: '#212121 !important' }, 'p, div, span, li': { color: '#212121 !important' }, a: { color: '#1976d2 !important' } });
+                }
+            }
+
+            async function postProgress(status, progressPercent, currentPage, totalPages, epubLocation) {
+                try {
+                    const postUrl = location.pathname + '?handler=Progress';
+                    const resp = await fetch(postUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status, progressPercent, currentPage, totalPages, epubLocation })
+                    });
+                    // ignore result
+                } catch (e) { console.warn('Failed to post progress', e); }
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const fetchOpts = token ? { headers: { 'Authorization': 'Bearer ' + token } } : { credentials: 'same-origin' };
+
+                const resp = await fetch(bookUrl, fetchOpts);
+                if (!resp.ok) {
+                    const ct = resp.headers.get('content-type') || '';
+                    if (resp.status === 302 || ct.includes('text/html')) throw new Error('Authentication required or failed to fetch EPUB.');
+                    throw new Error('Failed to fetch book: ' + resp.status + ' ' + resp.statusText);
+                }
+
+                const arrayBuffer = await resp.arrayBuffer();
+
+                // create a downloadable blob URL for debugging
+                const dbgBlob = new Blob([arrayBuffer], { type: resp.headers.get('content-type') || 'application/epub+zip' });
+                const dbgDownloadUrl = URL.createObjectURL(dbgBlob);
+
+                epubBook = ePub(arrayBuffer);
+                await epubBook.ready;
+
+                // Inspect loaded navigation/spine for diagnostics
+                try {
+                    const nav = await epubBook.loaded.navigation;
+                    console.log('EPUB navigation', nav);
+                    // If no toc/sections, surface download link so user can inspect file
+                    if (!nav || !nav.toc || nav.toc.length === 0) {
+                        console.warn('No navigation/toc found in EPUB');
+                        container.innerHTML = '<div class="p-4">Failed to load book: No sections found. <a id="downloadEpub" href="' + dbgDownloadUrl + '" download="book.epub">Download EPUB for inspection</a></div>';
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('Error reading navigation', e);
+                }
+
+                try { await epubBook.locations.generate(1024); } catch (e) { /* ignore */ }
+
+                rendition = epubBook.renderTo(container, { width: '100%', height: '100%', spread: 'none', flow: 'paginated' });
+                applyTheme();
+                rendition.themes.fontSize(fontSize + '%');
+
+                // Only attempt to restore a saved location if it looks like a CFI (epubcfi(...)).
+                const saved = '@(Model.Book?.StartedAt ?? "")';
+                if (saved && saved.startsWith && saved.startsWith('epubcfi(')) {
+                    cfiLocation = saved;
+                    try { await rendition.display(saved); } catch (e) { console.warn('Failed to restore saved cfi', e); await rendition.display(); }
+                }
+                else {
+                    // saved value is not a CFI (might be a timestamp); just display start
+                    await rendition.display();
+                }
+
+                // mark reading when opened
+                (async() => { await postProgress('reading', 0, null, null, cfiLocation); })();
+
+                // throttle/debounce progress saves to reduce DB writes: only send if percent changed by >=2 or 15s passed
+                let _lastSavedPercent = -1;
+                let _lastSavedAt = 0;
+                const _saveIntervalMs = 15000; // 15s
+
+                rendition.on('relocated', (loc) => {
+                    try {
+                        const percent = Math.round((loc.start && loc.start.percentage ? loc.start.percentage : 0) * 100);
+                        progressRange.value = percent;
+                        progressPercent.textContent = percent + '%';
+
+                        if (loc.start && loc.start.displayed) {
+                            currentPageEl.textContent = loc.start.displayed.page || '0';
+                            totalPagesEl.textContent = loc.start.displayed.total || '0';
+                        }
+
+                        prevBtn.disabled = !!loc.atStart;
+                        nextBtn.disabled = !!loc.atEnd;
+
+                        // save progress conditionally (delta or interval)
+                        cfiLocation = loc.start ? loc.start.cfi : cfiLocation;
+                        const now = Date.now();
+                        const shouldSave = (_lastSavedPercent < 0) || Math.abs(percent - _lastSavedPercent) >= 2 || (now - _lastSavedAt) > _saveIntervalMs;
+                        if (shouldSave) {
+                            _lastSavedPercent = percent;
+                            _lastSavedAt = now;
+                            postProgress('reading', percent, loc.start && loc.start.displayed ? loc.start.displayed.page : null, loc.start && loc.start.displayed ? loc.start.displayed.total : null, cfiLocation);
+                        }
+                    } catch (e) { console.warn(e); }
+                });
+
+                prevBtn.addEventListener('click', () => rendition.prev());
+                nextBtn.addEventListener('click', () => rendition.next());
+                navLeft.addEventListener('click', () => rendition.prev());
+                navRight.addEventListener('click', () => rendition.next());
+                increaseFont.addEventListener('click', () => { fontSize = Math.min(200, fontSize + 10); rendition.themes.fontSize(fontSize + '%'); });
+                decreaseFont.addEventListener('click', () => { fontSize = Math.max(80, fontSize - 10); rendition.themes.fontSize(fontSize + '%'); });
+                toggleTheme.addEventListener('click', () => { isDark = !isDark; applyTheme(); });
+
+                let isSeeking = false;
+                progressRange.addEventListener('input', (e) => {
+                    isSeeking = true;
+                    progressPercent.textContent = e.target.value + '%';
+                });
+                progressRange.addEventListener('change', (e) => {
+                    const val = Number(e.target.value);
+                    if (epubBook && epubBook.locations && epubBook.locations.cfiFromPercentage) {
+                        const cfi = epubBook.locations.cfiFromPercentage(val / 100);
+                        rendition.display(cfi).finally(() => { isSeeking = false; });
+                    } else {
+                        isSeeking = false;
+                    }
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft') rendition.prev();
+                    if (e.key === 'ArrowRight') rendition.next();
+                });
+
+            } catch (err) {
+                console.error('Reader failed to load book', err);
+                container.innerHTML = '<div class="p-4">Failed to load book: ' + String(err) + '</div>';
+            }
+
+            window.__epubReader = { next() { if (rendition) rendition.next(); }, prev() { if (rendition) rendition.prev(); } };
+        })();
+    </script>
+</div>

@@ -1,0 +1,134 @@
+﻿@page
+@using MyDigitalLibrary.Core.Pages.Account
+@model RegisterModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Register";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-8 col-md-5">
+            <div class="card shadow-sm p-4">
+                <h1 class="mb-4 text-center">My Digital Library</h1>
+                <h3 class="mb-4 text-center">Create Account</h3>
+
+                @if (ViewData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                        @ViewData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <form method="post">
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div> <!-- Add this line -->
+
+                    <div class="mb-4">
+                        <label asp-for="Email" class="form-label">Email</label>
+                        <input asp-for="Email" type="email" class="form-control" required />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Password" class="form-label">Password (min 6 chars)</label>
+                        <input asp-for="Password" type="password" class="form-control" required />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="PasswordConfirm" class="form-label">Confirm Password</label>
+                        <input asp-for="PasswordConfirm" type="password" class="form-control" required />
+                        <span asp-validation-for="PasswordConfirm" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input asp-for="AcceptedTerms" class="form-check-input" type="checkbox" id="termsCheckbox" />
+                        <label class="form-check-label" for="termsCheckbox">
+                            I agree to the
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" class="text-primary">Terms of Use</a>
+                            and confirm that I will not upload copyrighted materials without authorization.
+                        </label>
+                        <span asp-validation-for="AcceptedTerms" class="text-danger"></span>
+                    </div>
+
+                    <button id="submitButton" type="submit" class="btn btn-primary w-100 mb-4" disabled>Create Account</button>
+
+                    <script>
+                        const termsCheckbox = document.getElementById('termsCheckbox');
+                        const submitButton = document.getElementById('submitButton');
+
+                        termsCheckbox.addEventListener('change', () => {
+                            submitButton.disabled = !termsCheckbox.checked;
+                        });
+                    </script>
+
+                    <p class="text-center">
+                        Already have an account?
+                        <a href="/Account/Login">Sign In</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms of Use Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Terms of Use</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="terms-content">
+                    <p class="text-subtitle-1 mb-4">
+                        <strong>Last Updated:</strong> November 16, 2025
+                    </p>
+
+                    <p class="mb-4">
+                        Please read these Terms of Use ("Terms") carefully before using the MyBookShelf service
+                        ("Service"). By creating an account and using this Service, you agree to be bound by these Terms.
+                    </p>
+
+                    <hr class="my-4" />
+
+                    <h2 class="h5 mb-3">1. Acceptance of Terms</h2>
+                    <p class="mb-4">
+                        By accessing or using MyBookShelf, you acknowledge that you have read, understood, and agree to be
+                        bound by these Terms of Use and our Privacy Policy. If you do not agree to these terms, you may not
+                        use the Service.
+                    </p>
+
+                    <h2 class="h5 mb-3">2. User Account and Registration</h2>
+                    <p class="mb-4">
+                        You must create an account to use the Service. You are responsible for:
+                    </p>
+                    <ul class="mb-4">
+                        <li>Maintaining the confidentiality of your account credentials</li>
+                        <li>All activities that occur under your account</li>
+                        <li>Notifying us immediately of any unauthorized use</li>
+                        <li>Providing accurate and current information during registration</li>
+                    </ul>
+
+                    <h2 class="h5 mb-3">3. Copyright and Intellectual Property</h2>
+                    <p class="mb-4">
+                        <strong>IMPORTANT:</strong> You agree that:
+                    </p>
+                    <ul class="mb-4">
+                        <li>You will NOT upload, import, or store copyrighted materials without proper authorization.</li>
+                        <li>You have the legal right to possess and use all books and files you upload to the Service.</li>
+                        <li>You will only upload content that you own, have created, or have explicit permission to store and use.</li>
+                        <li>Uploading copyrighted commercial ebooks without authorization is strictly prohibited.</li>
+                    </ul>
+
+                    <!-- Add more sections as needed -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

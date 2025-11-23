@@ -1,0 +1,83 @@
+@page
+@model MyDigitalLibrary.Core.Pages.Import.IndexModel
+@{
+    ViewData["Title"] = "Import Calibre";
+}
+
+<div class="container py-4">
+    <h2>Import Calibre Library</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Upload a local Calibre library folder (uses directory picker in supported browsers)</label>
+            <input type="file" name="UploadedFiles" webkitdirectory directory multiple class="form-control" />
+            <div class="form-text">Select the Calibre library folder. Chrome/Edge/Firefox (may vary) support folder upload.</div>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="ImportCovers" class="form-check-input" />
+            <label asp-for="ImportCovers" class="form-check-label">Import cover images if available</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Start import</button>
+    </form>
+
+    @if (!string.IsNullOrEmpty(Model.ResultMessage))
+    {
+        <div class="alert alert-info mt-3" id="import-result">@Model.ResultMessage</div>
+        <div class="mt-2" id="import-progress" style="display:none;">
+            <div class="progress">
+                <div id="import-progress-bar" class="progress-bar" role="progressbar" style="width:0%">0%</div>
+            </div>
+            <div class="small text-muted mt-1">Status: <span id="import-status">queued</span></div>
+        </div>
+        <script>
+            (function() {
+                // If ResultMessage contains the job id, extract and poll
+                var msg = document.getElementById('import-result').innerText || '';
+                var m = msg.match(/Import job ([0-9a-fA-F\-]+)/);
+                if (!m) return;
+                var jobId = m[1];
+                document.getElementById('import-progress').style.display = 'block';
+
+                function poll() {
+                    fetch('/Api/Jobs/Status?id=' + encodeURIComponent(jobId))
+                        .then(r => {
+                            if (!r.ok) throw new Error('Status fetch failed');
+                            return r.json();
+                        })
+                        .then(s => {
+                            var p = s.progress || 0;
+                            var st = s.status || 'queued';
+                            var bar = document.getElementById('import-progress-bar');
+                            bar.style.width = p + '%';
+                            bar.innerText = p + '%';
+                            document.getElementById('import-status').innerText = st;
+
+                            if (st === 'completed' || st === 'failed') {
+                                // stop polling
+                                if (st === 'completed') {
+                                    // refresh to show new books
+                                    setTimeout(function() { window.location = '/Books'; }, 1200);
+                                }
+                                return;
+                            }
+
+                            setTimeout(poll, 2000);
+                        })
+                        .catch(err => {
+                            console.warn('Import poll error', err);
+                            setTimeout(poll, 5000);
+                        });
+                }
+
+                // start polling
+                poll();
+            })();
+        </script>
+    }
+
+    <div class="mt-4 text-muted">
+        Note: this importer scans the supplied files and uploads them to the configured storage. Use with care.
+    </div>
+</div>

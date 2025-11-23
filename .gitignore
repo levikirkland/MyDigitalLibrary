@@ -3,3 +3,88 @@
 ################################################################################
 
 /.vs
+
+# =========================
+# Core Git Ignore Template
+# =========================
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+desktop.ini
+
+# Node / Web projects
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build / dist outputs
+dist/
+build/
+out/
+coverage/
+*.log
+
+# IDE / Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Visual Studio / .NET
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vcxproj.*
+*.pdb
+*.obj
+*.exe
+*.dll
+*.cache
+*.dbmdl
+*.bak
+*.log
+bin/
+obj/
+Debug/
+Release/
+
+# Python (if used)
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+.env
+
+# Git / Repo metadata
+*.orig
+*.rej
+*.diff
+*.patch
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.old
+
+# Reports / Docs (optional)
+*.docx
+*.pdf
+*.xlsx
+*.pptx
+
+# Environment & secrets
+.env
+.env.*
+*.key
+*.pem
+*.crt
+*.secret
