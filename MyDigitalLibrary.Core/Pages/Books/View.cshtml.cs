@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using MyDigitalLibrary.Core.Core.Entities;
-using MyDigitalLibrary.Core.Entities;
 using MyDigitalLibrary.Core.Models;
 using MyDigitalLibrary.Core.Repositories;
 using MyDigitalLibrary.Core.Services;
@@ -11,12 +9,10 @@ namespace MyDigitalLibrary.Core.Pages.Books;
 public class ViewModel : PageModel
 {
     private readonly IBookService _bookService;
-    private readonly ICollectionRepository _collectionRepo;
 
-    public ViewModel(IBookService bookService, ICollectionRepository collectionRepo)
+    public ViewModel(IBookService bookService)
     {
         _bookService = bookService;
-        _collectionRepo = collectionRepo;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -24,12 +20,6 @@ public class ViewModel : PageModel
 
     public Book? Book { get; set; }
     public Book[]? SimilarBooks { get; set; }
-
-    // Collections available to the current user (for Add to collection UI)
-    public CollectionEntity[]? UserCollections { get; set; }
-
-    // Collections that already contain this book (for display)
-    public CollectionEntity[]? CollectionsContainingBook { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -40,51 +30,9 @@ public class ViewModel : PageModel
             return Page();
         }
 
-        // fetch user's collections for dropdown and determine which contain this book
-        var idClaim = User.FindFirst("userId")?.Value;
-        if (int.TryParse(idClaim, out var userId))
-        {
-            UserCollections = await _collectionRepo.GetCollectionsByUserIdAsync(userId);
-
-            var contains = new List<CollectionEntity>();
-            if (UserCollections != null)
-            {
-                foreach (var c in UserCollections)
-                {
-                    var members = await _collectionRepo.GetBooksInCollectionAsync(c.Id);
-                    if (members.Any(m => m.BookId == Id)) contains.Add(c);
-                    if (contains.Count >= 3) break; // limit for display
-                }
-            }
-
-            CollectionsContainingBook = contains.ToArray();
-        }
-        else
-        {
-            // ensure not null to simplify view logic
-            UserCollections = Array.Empty<CollectionEntity>();
-            CollectionsContainingBook = Array.Empty<CollectionEntity>();
-        }
-
         // TODO: fetch similar books (placeholder uses latest books for the same user)
         SimilarBooks = await _bookService.GetBooksByUserIdAsync(Book.UserId);
         return Page();
-    }
-
-    // POST handler to add book to user's collection (no API call required)
-    public async Task<IActionResult> OnPostAddToCollectionAsync(int collectionId)
-    {
-        var idClaim = User.FindFirst("userId")?.Value;
-        if (!int.TryParse(idClaim, out var userId)) return Unauthorized();
-
-        // verify collection belongs to user
-        var c = await _collectionRepo.GetCollectionByIdAsync(collectionId);
-        if (c == null || c.UserId != userId) return Forbid();
-
-        await _collectionRepo.AddBookAsync(new BookCollectionEntity { CollectionId = collectionId, BookId = Id });
-
-        // redirect back to view so the UI refreshes server-side
-        return RedirectToPage();
     }
 
     public string FormatDateShort(string? dateString) => dateString == null ? string.Empty : DateTime.TryParse(dateString, out var dt) ? dt.ToString("MMM d, yyyy") : dateString ?? string.Empty;

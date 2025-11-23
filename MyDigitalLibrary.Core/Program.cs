@@ -83,12 +83,6 @@ builder.Services.AddScoped<CalibreImporter>();
 // Register worker background service (uses AZURE_SERVICEBUS_CONNECTIONSTRING internally)
 builder.Services.AddHostedService<WorkerService>();
 
-// Register collection repository/service
-builder.Services.AddScoped<MyDigitalLibrary.Core.Repositories.ICollectionRepository, MyDigitalLibrary.Core.Repositories.CollectionRepository>();
-builder.Services.AddScoped<MyDigitalLibrary.Core.Services.ICollectionService, MyDigitalLibrary.Core.Services.CollectionService>();
-// Optionally register ICollectionService if implemented
-// builder.Services.AddScoped<MyDigitalLibrary.Core.Services.ICollectionService, MyDigitalLibrary.Core.Services.CollectionService>();
-
 // Configure data protection keys directory (create folder and allow override via config)
 var keysPathFromConfig = builder.Configuration["DataProtection:KeyPath"];
 var keyDirPath = !string.IsNullOrEmpty(keysPathFromConfig)
