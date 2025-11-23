@@ -13,8 +13,6 @@ public class AppDbContext : DbContext
     public DbSet<FormatEntity> Formats { get; set; } = default!;
     public DbSet<FileEntity> Files { get; set; } = default!;
     public DbSet<JobEntity> Jobs { get; set; } = default!;
-    public DbSet<CollectionEntity> Collections { get; set; } = default!;
-    public DbSet<BookCollectionEntity> BookCollections { get; set; } = default!;
     public DbSet<ReadingProgressEntity> ReadingProgress { get; set; } = default!;
     public DbSet<ReviewEntity> Reviews { get; set; } = default!;
 
@@ -23,7 +21,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<UserEntity>().HasIndex(u => u.Email).IsUnique();
         modelBuilder.Entity<FormatEntity>().HasIndex(f => new { f.BookId, f.Format }).IsUnique();
         modelBuilder.Entity<FileEntity>().HasIndex(f => f.Sha256).IsUnique();
-        modelBuilder.Entity<BookCollectionEntity>().HasIndex(bc => new { bc.BookId, bc.CollectionId }).IsUnique();
         modelBuilder.Entity<BookEntity>().HasIndex(b => b.FileId);
         modelBuilder.Entity<BookEntity>().HasIndex(b => b.CoverFileId);
         modelBuilder.Entity<ReadingProgressEntity>().HasIndex(r => new { r.BookId, r.UserId }).IsUnique();
