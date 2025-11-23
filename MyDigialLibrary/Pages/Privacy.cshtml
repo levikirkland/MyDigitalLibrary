@@ -1,0 +1,41 @@
+﻿@page
+@model PrivacyModel
+@{
+    Layout = User?.Identity?.IsAuthenticated == true ? "_Layout" : "_PublicLayout";
+    ViewData["Title"] = "Privacy Policy";
+}
+
+<div class="container py-4">
+    <h1>@ViewData["Title"]</h1>
+
+    <p>This privacy policy explains how MyBookShelf collects, uses, stores, and protects your personal information.</p>
+
+    <h2 class="h5">1. Information We Collect</h2>
+    <ul>
+        <li>Account information such as email address and password hash.</li>
+        <li>Optional profile information you choose to provide.</li>
+        <li>Metadata related to files you upload (file names, sizes, formats).</li>
+    </ul>
+
+    <h2 class="h5">2. How We Use Your Information</h2>
+    <ul>
+        <li>To provide and maintain the Service.</li>
+        <li>To authenticate and manage user accounts.</li>
+        <li>To respond to support requests and enforce terms of service.</li>
+    </ul>
+
+    <h2 class="h5">3. Data Sharing</h2>
+    <p>We do not sell your personal information. We may share data with third-party service providers that help operate the Service (e.g., hosting, analytics), subject to confidentiality obligations.</p>
+
+    <h2 class="h5">4. Data Security</h2>
+    <p>We take reasonable measures to protect your data, including using industry-standard encryption for data in transit and secure password hashing. However, no system is completely secure.</p>
+
+    <h2 class="h5">5. Data Retention</h2>
+    <p>We retain user data as long as necessary to provide the Service and comply with legal obligations.</p>
+
+    <h2 class="h5">6. Your Rights</h2>
+    <p>You may request access to, correction of, or deletion of your personal data by contacting the site administrator.</p>
+
+    <hr />
+    <p class="small text-muted">If you have questions about this Privacy Policy, please contact the site administrator.</p>
+</div>

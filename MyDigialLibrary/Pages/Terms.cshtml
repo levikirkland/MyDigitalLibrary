@@ -1,0 +1,47 @@
+@page
+@{
+    Layout = User?.Identity?.IsAuthenticated == true ? "_Layout" : "_PublicLayout";
+    ViewData["Title"] = "Terms of Use";
+}
+
+<div class="container py-4">
+    <h1>@ViewData["Title"]</h1>
+    <p class="text-muted"><strong>Last Updated:</strong> November 16, 2025</p>
+
+    <p>Please read these Terms of Use ("Terms") carefully before using the MyBookShelf service ("Service"). By creating an account and using this Service, you agree to be bound by these Terms.</p>
+
+    <hr />
+
+    <h2 class="h5">1. Acceptance of Terms</h2>
+    <p>By accessing or using MyBookShelf, you acknowledge that you have read, understood, and agree to be bound by these Terms of Use and our Privacy Policy. If you do not agree to these terms, you may not use the Service.</p>
+
+    <h2 class="h5">2. User Account and Registration</h2>
+    <p>You must create an account to use the Service. You are responsible for:</p>
+    <ul>
+        <li>Maintaining the confidentiality of your account credentials</li>
+        <li>All activities that occur under your account</li>
+        <li>Notifying us immediately of any unauthorized use</li>
+        <li>Providing accurate and current information during registration</li>
+    </ul>
+
+    <h2 class="h5">3. Copyright and Intellectual Property</h2>
+    <p><strong>IMPORTANT:</strong> You agree that:</p>
+    <ul>
+        <li>You will NOT upload, import, or store copyrighted materials without proper authorization.</li>
+        <li>You have the legal right to possess and use all books and files you upload to the Service.</li>
+        <li>You will only upload content that you own, have created, or have explicit permission to store and use.</li>
+        <li>Uploading copyrighted commercial ebooks without authorization is strictly prohibited.</li>
+    </ul>
+
+    <h2 class="h5">4. Acceptable Use</h2>
+    <p>You must not use the Service to store or distribute illegal content or engage in activities that violate applicable laws or the rights of others.</p>
+
+    <h2 class="h5">5. Termination</h2>
+    <p>We reserve the right to suspend or terminate accounts that violate these Terms or applicable law.</p>
+
+    <h2 class="h5">6. Changes to Terms</h2>
+    <p>We may modify these Terms from time to time. Continued use of the Service after changes are posted constitutes acceptance of the revised Terms.</p>
+
+    <hr />
+    <p class="small text-muted">If you have questions about these Terms, please contact the site administrator.</p>
+</div>

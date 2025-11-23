@@ -1,0 +1,45 @@
+@page
+@model MyDigitalLibrary.Pages.Books.UploadModel
+@{
+    ViewData["Title"] = "Upload Book";
+}
+
+<div class="container py-4">
+    <h2>Upload Book</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Book file</label>
+            <input asp-for="File" type="file" class="form-control" />
+            <span asp-validation-for="File" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Cover (optional)</label>
+            <input asp-for="Cover" type="file" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Title" class="form-label">Title</label>
+            <input asp-for="Title" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Authors" class="form-label">Authors</label>
+            <input asp-for="Authors" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Upload</button>
+        <a class="btn btn-secondary ms-2" href="/Books">Cancel</a>
+    </form>
+
+    @if (Model.ErrorMessage != null)
+    {
+        <div class="alert alert-danger mt-3">@Model.ErrorMessage</div>
+    }
+
+    @if (Model.Success)
+    {
+        <div class="alert alert-success mt-3">Upload successful. <a href="/Books">Return to library</a></div>
+    }
+</div>

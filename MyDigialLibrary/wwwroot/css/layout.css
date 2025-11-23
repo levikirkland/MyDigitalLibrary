@@ -1,0 +1,191 @@
+/* Modern UI overrides for Bootstrap layout */
+
+body { background: #f6f9fc; }
+
+header .navbar-brand { color: #1b6ec2; }
+
+header { background: linear-gradient(90deg,#fff,#fff); }
+
+.navbar .form-control { min-width: 280px; }
+
+.card { border: 0; border-radius: 12px; box-shadow: 0 6px 20px rgba(23,43,77,0.06); overflow: hidden; }
+
+.table thead th { background: #fff; }
+
+.badge.bg-primary { background-color: #1b6ec2; }
+
+.footer { background: transparent; }
+
+.cover-thumb { width: 60px; height: 90px; object-fit: cover; border-radius: 4px; }
+
+/* Full cover image (used on edit/details pages) */
+.cover-full { max-width: 200px; max-height: 300px; width: auto; height: auto; object-fit: contain; border-radius: 4px; display: block; margin: 0 auto; }
+
+/* Card cover helper: fixed-height cover that fills card area while preserving aspect and not enlarging the card */
+.card-cover {
+  width: 100%;
+  height: 140px; /* fixed height for card covers */
+  object-fit: cover;
+  display: block;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+/* Slight variant for smaller collection cards if needed */
+.card-cover.small {
+  height: 120px;
+}
+
+/* Horizontal card layout: image on left, details on right */
+.card-horizontal {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  overflow: hidden;
+  align-items: stretch;
+}
+.card-horizontal .card-img-left {
+  width: 180px;
+  height: 140px;
+  object-fit: cover;
+  /* allow adjusting vertical focus of image; default 30% to show more top */
+  object-position: center 30%;
+  flex-shrink: 0;
+  border-radius: 12px 0 0 12px;
+}
+.card-horizontal .card-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Centered horizontal card list: fixed max-width cards centered on page */
+.centered-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+.centered-card-list .card {
+  width: 100%;
+  max-width: 940px; /* increased fixed visual width for each card */
+}
+.centered-card {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  overflow: hidden;
+  align-items: stretch;
+}
+.centered-card .card-img-left {
+  width: 300px; /* larger cover */
+  height: 450px; /* larger cover */
+  object-fit: cover;
+  object-position: center 30%;
+  flex-shrink: 0;
+  border-radius: 12px 0 0 12px;
+}
+.centered-card .card-body {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.collection-list,
+.list-container {
+  max-width: 1200px; /* increased from 980px */
+  margin: 0 auto;
+}
+.collection-list .row { margin-left: -8px; margin-right: -8px; }
+.collection-list .col-12 { padding-left: 8px; padding-right: 8px; }
+.collection-list .card { width: 100%; }
+
+/* Grid helper for card lists (collections, recommendations, similar books) */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+.card-grid .card { display: flex; flex-direction: column; }
+
+@media (max-width: 992px) {
+  .card-horizontal .card-img-left { width: 160px; height: 120px; }
+}
+
+@media (max-width: 876px) {
+  /* Switch to stacked layout for narrower viewports */
+  .centered-card { flex-direction: column; }
+  .centered-card .card-img-left { width: 100%; height: 340px; border-radius: 12px 12px 0 0; object-position: center 40%; }
+  .centered-card-list .card { max-width: 100%; }
+}
+
+@media (max-width: 576px) {
+  .navbar .form-control { min-width: 120px; }
+  .cover-full { max-width: 140px; max-height: 210px; }
+  .no-cover-placeholder { width: 140px; height: 210px; }
+  .card-cover { height: 120px; }
+  .card-horizontal { flex-direction: column; }
+  .card-horizontal .card-img-left { width: 100%; height: 160px; border-radius: 12px 12px 0 0; object-position: center 40%; }
+}
+
+/* Placeholder box for missing cover (used on edit page) */
+.no-cover-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 200px; height: 300px; border: 2px dashed #ccc; border-radius: 4px; background-color: #f5f5f5; }
+
+/* Cover column for new centered card layout */
+.cover-col {
+  width: 300px; /* match larger cover */
+  height: 450px; /* match larger cover */
+  flex: 0 0 300px; /* prevent flexbox from shrinking/growing */
+  max-width: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0; /* remove inner padding so image aligns to card edge */
+  overflow: hidden; /* ensure oversized images don't change layout */
+  background-color: #fff; /* keep a neutral background so no dark band shows */
+}
+.cover-col img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* crop to fit box */
+  border-radius: 12px 0 0 12px; /* match card rounded corner */
+  display: block;
+}
+@media (max-width: 876px) {
+  /* On narrower screens make cover full-width but fixed height */
+  .cover-col {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 auto;
+    height: 320px;
+    padding: 0; /* keep image flush on mobile */
+  }
+  .cover-col img { height: 100%; width: 100%; border-radius: 12px 12px 0 0; }
+}
+
+/* Card hover lift used by collection grid */
+.card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+}
+
+/* Table description row style and cover-thumb */
+.description-row td {
+  background-color: #f8f9fa;
+  font-size: 0.95rem;
+}
+
+/* Collapse icon rotation */
+.collapse-icon {
+  transition: transform 0.25s ease;
+  display: inline-block;
+}
+.collapse-icon.rotate {
+  transform: rotate(180deg);
+}

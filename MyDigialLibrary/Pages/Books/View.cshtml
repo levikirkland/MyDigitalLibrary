@@ -1,0 +1,219 @@
+@page "{id:int}"
+@model MyDigitalLibrary.Pages.Books.ViewModel
+@{
+    ViewData["Title"] = "Book Details";
+}
+
+<div class="modal-dialog modal-xl" role="dialog">
+    <div class="modal-content">
+        <div class="modal-header d-flex align-items-center">
+            <h5 class="modal-title d-flex align-items-center">
+                <i class="fa-solid fa-book-open-page-variant me-2"></i>
+                Book Details
+            </h5>
+            <div class="ms-auto">
+                <a class="btn btn-outline-secondary btn-sm" href="/Books/Edit/@Model.Book?.Id">Edit</a>
+                <a class="btn btn-secondary btn-sm ms-2" href="/Books">Back to list</a>
+            </div>
+        </div>
+
+        <div class="modal-body p-4">
+            <div class="row">
+                <div class="col-md-4 text-center">
+                    @if (!string.IsNullOrEmpty(Model.Book?.CoverUrl))
+                    {
+                        <img src="@Model.Book.CoverUrl" loading="lazy" class="img-fluid rounded shadow-sm" style="max-height:420px; object-fit:contain;" alt="cover" />
+                    }
+                    else
+                    {
+                        <div class="border rounded d-flex flex-column align-items-center justify-content-center p-5 text-muted">
+                            <i class="fa-solid fa-book-open-blank-variant fa-3x mb-2"></i>
+                            <div>No cover image</div>
+                        </div>
+                    }
+
+                    <div class="mt-3 text-center">
+                        <a class="btn btn-outline-primary btn-sm me-2" href="/Books/Read/@Model.Book?.Id">Read</a>
+                        <a class="btn btn-outline-secondary btn-sm" href="/Books/Download/@Model.Book?.Id">Download</a>
+                        <form method="post" asp-page-handler="AddToCollection" class="d-inline">
+                            <div class="input-group input-group-sm mt-2">
+                                <select name="collectionId" class="form-select">
+                                    <option value="">Add to collection...</option>
+                                    @if (Model.UserCollections != null)
+                                    {
+                                        foreach (var c in Model.UserCollections)
+                                        {
+                                            <option value="@c.Id">@c.Name</option>
+                                        }
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-primary">Add</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <h2 class="mb-1">@Model.Book?.Title</h2>
+                    <div class="text-muted mb-2">@Model.Book?.Authors</div>
+
+                    <div class="mb-3">
+                        <dl class="row mb-0">
+                            @if (!string.IsNullOrEmpty(Model.Book?.Series))
+                            {
+                                <dt class="col-sm-3">Series</dt>
+                                <dd class="col-sm-9">@Model.Book.Series @if (Model.Book.SeriesIndex != null) { <span class="text-muted">#@Model.Book.SeriesIndex</span> }</dd>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.Book?.Publisher))
+                            {
+                                <dt class="col-sm-3">Publisher</dt>
+                                <dd class="col-sm-9">@Model.Book.Publisher</dd>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.Book?.PublishedAt))
+                            {
+                                <dt class="col-sm-3">Published</dt>
+                                <dd class="col-sm-9">@Model.FormatDate(Model.Book.PublishedAt)</dd>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.Book?.Isbn))
+                            {
+                                <dt class="col-sm-3">ISBN</dt>
+                                <dd class="col-sm-9">@Model.Book.Isbn</dd>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.Book?.Language))
+                            {
+                                <dt class="col-sm-3">Language</dt>
+                                <dd class="col-sm-9">@Model.Book.Language</dd>
+                            }
+
+                            <dt class="col-sm-3">Added</dt>
+                            <dd class="col-sm-9">@Model.FormatDateShort(Model.Book?.CreatedAt.ToString())</dd>
+
+                            <dt class="col-sm-3">File</dt>
+                            <dd class="col-sm-9">@Model.Book?.OriginalFilename @(@Model.FormatBytes(Model.Book?.FileSize ?? 0))</dd>
+                        </dl>
+                    </div>
+
+                    @* Tags (max 3) *@
+                    <div class="mb-3">
+                        <div class="small fw-semibold mb-1">Tags:</div>
+                        <div>
+                            @if (!string.IsNullOrEmpty(Model.Book?.Tags))
+                            {
+                                var tags = Model.Book.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).Take(3);
+                                foreach (var t in tags)
+                                {
+                                    <a class="badge bg-light text-dark me-1 mb-1" href="@Model.GetTagLink(t)">@t</a>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </div>
+                    </div>
+
+                    @* Collections containing this book (max 3) *@
+                    <div class="mb-3">
+                        <div class="small fw-semibold mb-1">Collections:</div>
+                        <div>
+                            @if (Model.CollectionsContainingBook != null && Model.CollectionsContainingBook.Any())
+                            {
+                                foreach (var c in Model.CollectionsContainingBook.Take(3))
+                                {
+                                    <a class="badge bg-light text-dark me-1 mb-1" href="/Collections/View/@c.Id">@c.Name</a>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </div>
+                    </div>
+
+                    @* Rating and Progress *@
+                    <div class="mb-3 d-flex align-items-center gap-3">
+                        @if (Model.Book?.Rating > 0)
+                        {
+                            <div>
+                                @for (int i = 0; i < (Model.Book?.Rating ?? 0); i++)
+                                {
+                                    <i class="fa-solid fa-star text-warning"></i>
+                                }
+                            </div>
+                        }
+
+                        @if (Model.Book?.ProgressPercent != null)
+                        {
+                            <div style="flex:1; min-width:180px;">
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2" style="height:12px;">
+                                        <div class="progress-bar @(Model.Book.ProgressPercent == 100 ? "bg-success" : "bg-primary")" role="progressbar" style="width:@(Model.Book.ProgressPercent)%"></div>
+                                    </div>
+                                    <small class="text-muted">@Model.Book.ProgressPercent%</small>
+                                </div>
+                                @if (Model.Book.CurrentPage != null && Model.Book.TotalPages != null)
+                                {
+                                    <div class="small text-muted mt-1">Page @Model.Book.CurrentPage of @Model.Book.TotalPages</div>
+                                }
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.Book?.Status))
+                        {
+                            <div>
+                                <span class="badge @(Model.Book.Status == "read" ? "bg-success" : Model.Book.Status == "reading" ? "bg-primary" : "bg-secondary")">@Model.Book.Status</span>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Book?.Description))
+                    {
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Description</h5>
+                                <div class="card-text">@Html.Raw(Model.Book.Description)</div>
+                            </div>
+                        </div>
+                    }
+
+                </div>
+            </div>
+
+            @if (Model.SimilarBooks?.Any() == true)
+            {
+                <hr />
+                <h5>Similar books you might like</h5>
+                <div class="row">
+                    @foreach (var s in Model.SimilarBooks)
+                    {
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100" role="button" onclick="location.href='/Books/View/@s.Id'">
+                                @if (!string.IsNullOrEmpty(s.CoverUrl))
+                                {
+                                    <img src="@s.CoverUrl" loading="lazy" class="card-cover" style="height:160px;object-fit:cover;" />
+                                }
+                                else
+                                {
+                                    <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:160px;">
+                                        <i class="fa-solid fa-book-open-blank-variant fa-2x text-muted"></i>
+                                    </div>
+                                }
+                                <div class="card-body">
+                                    <div class="fw-semibold text-truncate">@s.Title</div>
+                                    <div class="text-muted small text-truncate">@s.Authors</div>
+                                </div>
+                                <div class="card-footer small text-muted">@s.Publisher</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- server-side form used for adding to collection; no client fetch required -->

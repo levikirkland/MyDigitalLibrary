@@ -1,0 +1,58 @@
+﻿@page
+@using Microsoft.AspNetCore.Http
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Home";
+}
+
+<div class="py-5 text-center">
+    <h1 class="display-4 mb-3">Welcome to MyBookShelf</h1>
+    <p class="lead text-muted mb-4">Organize, read and share your digital library.</p>
+
+    <div class="row g-4 justify-content-center">
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card table-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Import your Calibre library</h5>
+                    <p class="card-text text-muted">Bring your existing Calibre collection into MyBookShelf with a few clicks.</p>
+                    <a href="/Import" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card table-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Built-in eBook reader</h5>
+                    <p class="card-text text-muted">Read EPUBs directly in the browser with progress tracking and bookmarks.</p>
+                    <a href="/Books" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card table-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Collections & Recommendations</h5>
+                    <p class="card-text text-muted">Organize books into collections and get personalized recommendations.</p>
+                    <a href="/Collections" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card table-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Reviews & Discoverability</h5>
+                    <p class="card-text text-muted">Share public reviews or keep them private — help others discover great books.</p>
+                    <a href="/About" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="/Account/Register" class="btn btn-primary me-2">Create an account</a>
+        <a href="/Account/Login" class="btn btn-outline-primary">Sign in</a>
+    </div>
+</div>

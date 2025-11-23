@@ -1,0 +1,331 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MyBookShelf — Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      body { background: #f6f9fc; }
+      .brand-text { line-height: 1.05; }
+      .brand-sub { font-size: .85rem; color: rgba(0,0,0,.6); margin-top: -4px; }
+      .cover-thumb { width:40px;height:60px;object-fit:cover;border-radius:4px; }
+      .table-card { border-radius:12px; box-shadow:0 6px 20px rgba(23,43,77,0.06); border:0; }
+      .nav-tabs .nav-link { margin-right: .25rem; }
+      .badge-tag { margin-right: .25rem; }
+      @media (max-width:575px){ .search-input { min-width: 120px; } }
+    </style>
+  </head>
+  <body>
+
+    <!-- Top navbar -->
+    <header class="bg-white shadow-sm">
+      <nav class="container navbar navbar-expand-lg navbar-light">
+        <a class="navbar-brand d-flex align-items-center" href="#" id="brand">
+          <i class="fa-solid fa-book-open fa-2x text-primary me-2"></i>
+          <div class="brand-text">
+            <div class="fw-bold">MyBookShelf</div>
+            <div class="brand-sub">Your Digital Library</div>
+          </div>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="topNav">
+          <ul class="navbar-nav me-auto align-items-center">
+            <li class="nav-item">
+              <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation"><button class="nav-link active" data-view="library">Library</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-view="discover">Discover</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-view="collections">Collections</button></li>
+                <li class="nav-item d-none d-md-block" role="presentation"><button class="nav-link" data-view="admin">Admin</button></li>
+              </ul>
+            </li>
+          </ul>
+
+          <form class="d-flex me-3" role="search" onsubmit="return false;">
+            <input class="form-control form-control-sm search-input" id="globalSearch" type="search" placeholder="Search books, authors, tags...">
+            <button class="btn btn-outline-secondary btn-sm ms-2" id="clearSearch" title="Clear">Clear</button>
+          </form>
+
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-primary btn-sm d-none d-md-inline" id="importBtn"><i class="fa-solid fa-file-import me-1"></i>Import</button>
+            <button class="btn btn-primary btn-sm" id="uploadBtn"><i class="fa-solid fa-upload me-1"></i>Upload Book</button>
+
+            <div class="dropdown">
+              <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" id="userMenu" data-bs-toggle="dropdown">
+                <i class="fa-regular fa-user fa-lg text-muted me-2"></i>
+                <span class="d-none d-sm-inline">user@example.com</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                <li class="px-3 py-2">
+                  <div class="fw-bold">user@example.com</div>
+                  <div class="text-muted small">Account Settings</div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li class="px-3"><div class="text-caption">Storage</div>
+                  <div class="px-2 py-1">
+                    <div class="progress" style="height:8px;border-radius:6px;">
+                      <div id="storageBar" class="progress-bar bg-primary" role="progressbar" style="width:40%"></div>
+                    </div>
+                    <div class="small text-muted mt-1">40 GB / 100 GB <span class="badge bg-success ms-1">Premium</span></div>
+                  </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" id="settingsBtn">Settings</a></li>
+                <li><a class="dropdown-item text-danger" href="#" id="logoutBtn">Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Main content -->
+    <main class="container py-4">
+
+      <!-- Discover -->
+      <section id="discover" class="d-none">
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-lg-6">
+            <div class="card p-3 table-card">
+              <h5>Popular Books</h5>
+              <p class="text-muted small">Hand-picked popular titles.</p>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="card p-3 table-card">
+              <h5>Recommendations</h5>
+              <p class="text-muted small">Based on your reading history.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Library -->
+      <section id="library">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div>
+            <h3 class="mb-0">My Books <small class="text-muted" id="bookCount">(0)</small></h3>
+            <p class="text-muted mb-0">Browse, search and manage your digital library</p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" id="importTop">Import</button>
+            <button class="btn btn-primary btn-sm" id="uploadTop">Upload Book</button>
+          </div>
+        </div>
+
+        <!-- Tag filters -->
+        <div class="mb-3">
+          <div class="small text-muted mb-1">Filter by tags:</div>
+          <div id="tagContainer"></div>
+        </div>
+
+        <!-- Table card -->
+        <div class="card table-card mb-4">
+          <div class="card-body p-0">
+            <div id="emptyState" class="p-4 text-center d-none">
+              <h5>No books yet</h5>
+              <p class="text-muted">Upload your first book to get started.</p>
+              <button class="btn btn-primary" id="emptyUpload">Upload Book</button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover mb-0 align-middle" id="booksTable">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width:80px">Cover</th>
+                    <th>Title</th>
+                    <th>Authors</th>
+                    <th>Series</th>
+                    <th style="width:140px">Progress</th>
+                    <th style="width:110px">Status</th>
+                    <th style="width:90px">Rating</th>
+                    <th>Publisher</th>
+                    <th style="width:120px">Added</th>
+                    <th style="width:110px">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="booksBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Collections -->
+      <section id="collections" class="d-none">
+        <div class="card table-card p-3">
+          <h5>Collections</h5>
+          <p class="text-muted small">Manage your book collections.</p>
+        </div>
+      </section>
+
+      <!-- Admin panel -->
+      <section id="admin" class="d-none">
+        <div class="card table-card p-3">
+          <h5>Admin Panel</h5>
+          <p class="text-muted small">Administrative tools (visible to admins).</p>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="bg-white border-top py-3">
+      <div class="container text-muted small d-flex justify-content-between">
+        <div>&copy; 2025 My Digital Library</div>
+        <div><a href="#">Privacy</a> &middot; <a href="#">Terms</a></div>
+      </div>
+    </footer>
+
+    <!-- Modals (Upload / Settings / Confirm) -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-body">Delete this book?</div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Sample data
+      const books = [
+        { id:1, title:'The Example Book', authors:'Jane Doe', coverUrl:null, series:null, seriesIndex:null, progress:23, status:'reading', rating:4, publisher:'Acme', created_at:'2025-01-18' , tags:'fiction,adventure'},
+        { id:2, title:'Another Title', authors:'John Smith', coverUrl:null, series:'Series X', seriesIndex:2, progress:100, status:'read', rating:5, publisher:'Books Inc', created_at:'2024-11-02', tags:'sci-fi'},
+      ];
+
+      // UI state
+      let currentView = 'library';
+      let activeDeleteId = null;
+      const isAdmin = false; // toggle to true to show admin tab
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // initialize
+        document.getElementById('bookCount').textContent = `(${books.length})`;
+        renderBooks(books);
+        renderTags();
+
+        // Tab clicks
+        document.querySelectorAll('#mainTabs button[data-view]').forEach(btn => {
+          btn.addEventListener('click', () => switchView(btn.getAttribute('data-view')));
+        });
+
+        // search
+        const search = document.getElementById('globalSearch');
+        search.addEventListener('input', () => filterBooks(search.value));
+        document.getElementById('clearSearch').addEventListener('click', (e)=>{e.preventDefault(); search.value=''; filterBooks('');});
+
+        // empty upload
+        document.getElementById('emptyUpload').addEventListener('click', ()=> alert('Open upload dialog'));
+
+        // confirm delete
+        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+          if(activeDeleteId!=null){
+            const idx = books.findIndex(b=>b.id===activeDeleteId);
+            if(idx>=0) books.splice(idx,1);
+            renderBooks(books);
+            var modal = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal'));
+            modal.hide();
+          }
+        });
+
+        // hide admin if not admin
+        if(!isAdmin){ document.querySelectorAll('#mainTabs button[data-view="admin"]').forEach(n=>n.closest('li').classList.add('d-none')); }
+      });
+
+      function switchView(view){
+        currentView = view;
+        ['library','discover','collections','admin'].forEach(id=>{
+          const el = document.getElementById(id);
+          if(el) el.classList.toggle('d-none', id!==view);
+        });
+        // update active tab
+        document.querySelectorAll('#mainTabs .nav-link').forEach(n=> n.classList.toggle('active', n.getAttribute('data-view')===view));
+      }
+
+      function renderBooks(list){
+        const tbody = document.getElementById('booksBody');
+        tbody.innerHTML = '';
+        if(!list || list.length===0){
+          document.getElementById('emptyState').classList.remove('d-none');
+          document.querySelector('#booksTable').classList.add('d-none');
+        } else {
+          document.getElementById('emptyState').classList.add('d-none');
+          document.querySelector('#booksTable').classList.remove('d-none');
+          list.forEach(book => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${book.coverUrl? `<img src="${book.coverUrl}" class="cover-thumb"/>` : '<i class="fa-solid fa-book-open-blank fa-2x text-muted"></i>'}</td>
+              <td><div class="fw-semibold">${escapeHtml(book.title)}</div><div class="text-muted small">${escapeHtml(book.title)}</div></td>
+              <td>${escapeHtml(book.authors||'-')}</td>
+              <td>${book.series? escapeHtml(book.series) + (book.seriesIndex? '<div class="text-muted small">#'+book.seriesIndex+'</div>':'') : '<span class="text-muted">-</span>'}</td>
+              <td>
+                <div class="d-flex align-items-center">
+                  <div class="progress flex-grow-1 me-2" style="height:10px; min-width:100px;">
+                    <div class="progress-bar ${book.progress===100? 'bg-success':'bg-primary'}" role="progressbar" style="width:${book.progress}%"></div>
+                  </div>
+                  <small class="text-muted">${book.progress}%</small>
+                </div>
+              </td>
+              <td>${book.status? `<span class="badge ${book.status==='read'?'bg-success':book.status==='reading'?'bg-primary':'bg-secondary'}">${book.status==='read'?'✓ Read': book.status==='reading'? 'Reading':'Unread'}</span>` : '<span class="text-muted">-</span>'}</td>
+              <td>${book.rating? '<i class="fa-solid fa-star text-warning"></i> '.repeat(book.rating) : '<span class="text-muted">-</span>'}</td>
+              <td>${escapeHtml(book.publisher||'-')}</td>
+              <td>${escapeHtml(book.created_at||'-')}</td>
+              <td>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-outline-success" onclick="alert('Read '+${book.id})">Read</button>
+                  <button class="btn btn-sm btn-outline-primary" onclick="alert('Edit '+${book.id})">Edit</button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(${book.id})">Delete</button>
+                </div>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+        document.getElementById('bookCount').textContent = `(${list.length})`;
+      }
+
+      function filterBooks(q){
+        q = (q||'').toLowerCase().trim();
+        if(!q) renderBooks(books);
+        else renderBooks(books.filter(b=> (b.title+b.authors+(b.tags||'')).toLowerCase().includes(q)));
+      }
+
+      function renderTags(){
+        const tags = new Set();
+        books.forEach(b=>{ if(b.tags) b.tags.split(',').map(t=>t.trim()).forEach(t=>tags.add(t)) });
+        const container = document.getElementById('tagContainer');
+        container.innerHTML = '';
+        Array.from(tags).slice(0,20).forEach(tag=>{
+          const a = document.createElement('a');
+          a.href = '#'; a.className = 'badge bg-light text-dark border me-1 mb-1 badge-tag';
+          a.textContent = tag; a.onclick = (e)=>{ e.preventDefault(); toggleTag(e.target, tag); };
+          container.appendChild(a);
+        });
+        if(tags.size===0) container.innerHTML = '<span class="text-muted">No tags</span>';
+      }
+
+      function toggleTag(el, tag){
+        el.classList.toggle('bg-primary'); el.classList.toggle('text-white');
+        // basic filtering (toggle on/off)
+        const active = Array.from(document.querySelectorAll('#tagContainer .badge.bg-primary')).map(n=>n.textContent);
+        if(active.length===0) renderBooks(books);
+        else renderBooks(books.filter(b=> b.tags && active.every(t=> b.tags.split(',').map(x=>x.trim()).includes(t))));
+      }
+
+      function confirmDelete(id){ activeDeleteId = id; var modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal')); modal.show(); }
+
+      function escapeHtml(text){ if(!text) return ''; return text.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

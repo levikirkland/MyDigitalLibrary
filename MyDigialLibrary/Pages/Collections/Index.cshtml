@@ -1,0 +1,67 @@
+@page
+@model MyDigitalLibrary.Pages.Collections.IndexModel
+@{
+    ViewData["Title"] = "Collections";
+}
+
+<div class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="mb-0 fw-bold">Collections</h2>
+        <button class="btn btn-primary" id="newCollection">New Collection</button>
+    </div>
+
+    @if (Model.Collections?.Any() == true)
+    {
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @foreach (var c in Model.Collections)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm card-hover">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fa-solid fa-book-open text-primary me-2"></i>
+                                @c.Name
+                                <span class="badge bg-success ms-2">New</span>
+                            </h5>
+                            <p class="card-text text-muted">@c.Description</p>
+                            <a class="btn btn-sm btn-outline-primary" href="/Collections/View/@c.Id">View</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="p-4 text-muted">No collections yet.</div>
+    }
+</div>
+
+<!-- Modal for new collection -->
+<div class="modal fade" id="createCollectionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" asp-page-handler="Create">
+        <div class="modal-header"><h5 class="modal-title">Create Collection</h5></div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input name="name" class="form-control" required maxlength="100" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" maxlength="500"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('newCollection').addEventListener('click', ()=> new bootstrap.Modal(document.getElementById('createCollectionModal')).show());
+</script>

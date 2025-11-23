@@ -1,0 +1,195 @@
+@page
+@model MyDigitalLibrary.Pages.Books.IndexModel
+@{
+    ViewData["Title"] = "Library";
+}
+
+<div>
+    <div class="d-flex align-items-center justify-content-between my-4">
+        <div>
+            <h3 class="mb-0">My Books <small class="text-muted">@(Model.Books?.Count ?? 0)</small></h3>
+            <p class="text-muted mb-0">Browse, search and manage your digital library</p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary btn-sm" href="/Import">Import</a>
+            <a class="btn btn-primary btn-sm" href="/Books/Upload">Upload Book</a>
+        </div>
+    </div>
+
+    <!-- Search + Filters -->
+    <form method="get" class="row g-2 align-items-center mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input asp-for="SearchQuery" class="form-control" placeholder="Search by title, author, series, ISBN, or tags..." />
+                <button class="btn btn-outline-secondary" type="submit">Search</button>
+                <a class="btn btn-outline-danger" href="@Url.Page("./Index")">Clear</a>
+            </div>
+        </div>
+
+        <div class="col-md-6 text-md-end">
+            <div class="small text-muted">Filter by tags:</div>
+            <div class="mt-1">
+                @if (Model.AllTags?.Any() == true)
+                {
+                    foreach (var tag in Model.AllTags)
+                    {
+                        var isSelected = Model.SelectedTags?.Contains(tag) == true;
+                        <a class="badge @(isSelected ? "bg-primary text-white" : "bg-light text-dark") me-1 mb-1"
+                           href="@Model.GetTagLink(tag)">
+                            @tag
+                        </a>
+                    }
+                    @if (Model.AllTags.Count == 0)
+                    {
+                        <span class="text-muted">No tags</span>
+                    }
+                }
+            </div>
+        </div>
+    </form>
+
+    <!-- Table -->
+    <div class="card table-card mb-4">
+        <div class="card-body p-0">
+            @if (Model.Books == null || !Model.Books.Any())
+            {
+                <div class="p-4 text-center">
+                    <h5 class="mb-2">No books yet</h5>
+                    <p class="text-muted mb-3">Upload your first book to get started.</p>
+                    <a class="btn btn-primary" href="/Books/Upload">Upload Book</a>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:80px">Cover</th>
+                                <th>Title</th>
+                                <th>Authors</th>
+                                <th>Series</th>
+                                <th style="width:140px">Progress</th>
+                                <th style="width:110px">Status</th>
+                                <th style="width:90px">Rating</th>
+                                <th>Publisher</th>
+                                <th style="width:120px">Added</th>
+                                <th style="width:110px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var book in Model.Books)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(book.CoverUrl))
+                                        {
+                                            <a href="/Books/View/@book.Id"><img src="@book.CoverUrl" loading="lazy" alt="cover" class="cover-thumb" /></a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">@book.Title</div>
+                                        <div class="text-muted small">@book.Title</div>
+                                    </td>
+                                    <td>@book.Authors</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(book.Series))
+                                        {
+                                            <div>@book.Series</div>
+                                            @if (book.SeriesIndex != null)
+                                            {
+                                                <div class="text-muted small">#@book.SeriesIndex</div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height:10px; min-width:100px;">
+                                                <div class="progress-bar @(book.ProgressPercent == 100 ? "bg-success" : "bg-primary")"
+                                                     role="progressbar"
+                                                     style="width:@(book.ProgressPercent)%"></div>
+                                            </div>
+                                            <small class="text-muted">@book.ProgressPercent%</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(book.Status))
+                                        {
+                                            <span class="badge @(book.Status == "read" ? "bg-success" : book.Status == "reading" ? "bg-primary" : "bg-secondary")">
+                                                @(book.Status == "read" ? "? Read" : book.Status == "reading" ? "Reading" : "Unread")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (book.Rating > 0)
+                                        {
+                                            <div>
+                                                @for (int i = 0; i < (book.Rating ?? 0); i++)
+                                                {
+                                                    <i class="fa-solid fa-star text-warning"></i>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>@book.Publisher</td>
+                                    <td>@(Model.FormatDateShort(book.CreatedAt.ToString()))</td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a class="btn btn-sm btn-outline-success start-reading" href="/Books/Read/@book.Id" data-id="@book.Id" title="Read">Read</a>
+                                            <a class="btn btn-sm btn-outline-primary" href="/Books/Edit/@book.Id" title="Edit">Edit</a>
+                                            <form method="post" asp-page-handler="Delete" class="d-inline">
+                                                <input type="hidden" name="id" value="@book.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this book?')">Delete</button>
+                                                @Html.AntiForgeryToken()
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<script>
+  // When user clicks Read, send a quick POST to mark status=reading before navigating so the library reflects it immediately
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('a.start-reading').forEach(a=>{
+      a.addEventListener('click', async function(e){
+        // allow ctrl/cmd click to open in new tab
+        if (e.ctrlKey || e.metaKey || e.button !== 0) return;
+        e.preventDefault();
+        const id = this.getAttribute('data-id');
+        try{
+          await fetch(`/Books/Read/${id}?handler=Progress`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'reading' })
+          });
+        } catch(e) { /* ignore errors, still navigate */ }
+        // navigate to reader
+        window.location = this.href;
+      });
+    });
+  });
+</script>

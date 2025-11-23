@@ -1,0 +1,116 @@
+﻿/* Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
+for details on configuring this project to bundle and minify static web assets. */
+
+a.navbar-brand {
+  white-space: normal;
+  text-align: center;
+  word-break: break-all;
+}
+
+a {
+  color: #0077cc;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+.border-top {
+  border-top: 1px solid #e5e5e5;
+}
+.border-bottom {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.box-shadow {
+  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
+
+button.accept-policy {
+  font-size: 1rem;
+  line-height: inherit;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  white-space: nowrap;
+  line-height: 60px;
+}
+
+/* Layout-specific styles for refreshed design */
+
+.header-gradient {
+  background: linear-gradient(90deg, #1b6ec2 0%, #2a8dd8 50%, #86bdf0 100%);
+}
+
+.navbar-brand svg {
+  filter: brightness(0) invert(1) opacity(.95);
+}
+
+.navbar-brand span {
+  color: #fff;
+  font-size: 1rem;
+}
+
+.navbar .form-control {
+  min-width: 320px;
+}
+
+@media (max-width: 992px) {
+  .navbar .form-control { min-width: 140px; }
+}
+
+.btn-light.text-primary {
+  background: #fff;
+  border-color: rgba(0,0,0,0.05);
+}
+
+.footer {
+  background: transparent;
+}
+
+body.bg-light {
+  background: #f6f9fc;
+}
+
+/* subtle container card shadow for content areas */
+.container .card {
+  border: 0;
+  box-shadow: 0 6px 20px rgba(23, 43, 77, 0.06);
+  border-radius: 10px;
+}
+
+/* small utility */
+.text-muted a { color: inherit; text-decoration: underline; }
+/* AdminLTE layout overrides and custom app styles */
+
+.brand-link .brand-image { background: rgba(255,255,255,0.06); }
+.brand-text { color: #fff; }
+
+.main-sidebar { background: linear-gradient(180deg,#1f3b6e,#234b85); }
+
+.content-wrapper { background: #f4f6f9; }
+
+.content-header h1 { font-size: 1.25rem; margin: 0; }
+
+.table thead th { background: #fff; }
+
+/* Make cards/tables slightly more airy */
+.card { border-radius: 8px; }
+
+/* small responsiveness for index page search input when inside AdminLTE */
+.form-control-navbar { width: 300px; }
+@media (max-width: 768px) { .form-control-navbar { width: 140px; } }
+
+/* Ensure footer is readable on dark sidebar */
+.main-footer { background: #fff; border-top: 1px solid #dee2e6; }
