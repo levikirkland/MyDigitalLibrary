@@ -1,12 +1,26 @@
-﻿################################################################################
+################################################################################
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs
-
-# =========================
-# Core Git Ignore Template
-# =========================
+# Visual Studio / .NET
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vcxproj.*
+*.pdb
+*.obj
+*.exe
+*.dll
+*.cache
+*.dbmdl
+*.bak
+*.log
+bin/
+obj/
+Debug/
+Release/
 
 # OS-specific files
 .DS_Store
@@ -34,25 +48,6 @@ coverage/
 .idea/
 *.swp
 *.swo
-
-# Visual Studio / .NET
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-*.vcxproj.*
-*.pdb
-*.obj
-*.exe
-*.dll
-*.cache
-*.dbmdl
-*.bak
-*.log
-bin/
-obj/
-Debug/
-Release/
 
 # Python (if used)
 __pycache__/
@@ -88,3 +83,12 @@ __pycache__/
 *.pem
 *.crt
 *.secret
+*.local.json
+*.secrets.json
+
+# Logs
+*.log
+
+# Misc
+
+# End of file
