@@ -13,12 +13,14 @@ public class EditModel : PageModel
     private readonly IBookService _bookService;
     private readonly IFileService _fileService;
     private readonly IConfiguration _config;
+    private readonly IFeatureService _featureService;
 
-    public EditModel(IBookService bookService, IFileService fileService, IConfiguration config)
+    public EditModel(IBookService bookService, IFileService fileService, IConfiguration config, IFeatureService featureService)
     {
         _bookService = bookService;
         _fileService = fileService;
         _config = config;
+        _featureService = featureService;
     }
 
     [BindProperty]
@@ -72,6 +74,8 @@ public class EditModel : PageModel
     public bool Success { get; set; }
     public string? ErrorMessage { get; set; }
 
+    public bool GoogleImportEnabled { get; set; }
+
     public async Task<IActionResult> OnGetAsync(int id)
     {
         var book = await _bookService.GetBookByIdAsync(id);
@@ -98,6 +102,14 @@ public class EditModel : PageModel
         TotalPages = book.TotalPages;
         StartedAt = book.StartedAt;
         FinishedAt = book.FinishedAt;
+
+        // determine if current user has google import feature
+        var idClaim = User.FindFirst("userId")?.Value;
+        if (int.TryParse(idClaim, out var userId))
+        {
+            var feats = await _featureService.GetFeaturesForUserAsync(userId);
+            GoogleImportEnabled = feats.Any(f => string.Equals(f.Name, "google_import", StringComparison.OrdinalIgnoreCase) && f.Enabled);
+        }
 
         return Page();
     }

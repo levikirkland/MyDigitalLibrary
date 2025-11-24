@@ -1,0 +1,25 @@
+@page
+@model MyDigitalLibrary.Core.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "Admin";
+}
+
+<div class="container py-4">
+    <h2>Admin Dashboard</h2>
+
+    <div class="row g-3">
+        <div class="col-auto">
+            <div class="card border-primary mb-3" style="max-width: 20rem;">
+                <div class="card-header">Users</div>
+                <div class="card-body">
+                    <h4 class="card-title">Manage users</h4>
+                    <p class="card-text">View and edit user accounts, roles, and per-user features.</p>
+                    <a class="btn btn-outline-primary" href="/Admin/Users">Open Users</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add more admin tool cards here -->
+    </div>
+
+</div>

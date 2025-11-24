@@ -1,8 +1,0 @@
-@page
-@model MyDigitalLibrary.Core.Pages.Api.Discover.IndexModel
-@{
-    Response.ContentType = "application/json";
-}
-
-@{ var items = Model.Items; }
-@Html.Raw(System.Text.Json.JsonSerializer.Serialize(items))

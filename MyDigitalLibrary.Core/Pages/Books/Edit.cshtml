@@ -14,171 +14,82 @@
 <div class="container py-4">
     <h2>Edit Book</h2>
 
+    @if (Model.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    }
+
     <form method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
 
         <div class="row">
-            <div class="col-md-3 mb-3 text-center">
-                @if (!string.IsNullOrEmpty(Model.ExistingCoverPath))
-                {
-                    <img src="@Model.ExistingCoverPath" alt="cover" class="img-fluid rounded cover-full" />
-                }
-                else
-                {
-                    <div class="no-cover-placeholder mx-auto">
-                        <div class="h5 text-muted">No cover</div>
-                    </div>
-                }
-
-                <div class="mt-3">
-                    <label class="form-label">Replace Cover (optional)</label>
-                    <input asp-for="Cover" type="file" class="form-control" />
-                </div>
-            </div>
-
-            <div class="col-md-9">
+            <div class="col-md-8">
                 <div class="mb-3">
-                    <label asp-for="Title" class="form-label">Title</label>
+                    <label class="form-label">Title</label>
                     <input asp-for="Title" class="form-control" />
-                    <span asp-validation-for="Title" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Authors" class="form-label">Authors</label>
+                    <label class="form-label">Authors</label>
                     <input asp-for="Authors" class="form-control" />
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Description" class="form-label">Description</label>
+                    <label class="form-label">Description</label>
                     <textarea asp-for="Description" class="form-control" rows="6"></textarea>
                 </div>
 
-                <div class="row g-3">
-                    <div class="col-sm-6">
-                        <label asp-for="Publisher" class="form-label">Publisher</label>
+                <h5>Metadata</h5>
+                <div class="row g-2">
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label">Publisher</label>
                         <input asp-for="Publisher" class="form-control" />
                     </div>
-                    <div class="col-sm-6">
-                        <label asp-for="Isbn" class="form-label">ISBN</label>
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label">ISBN</label>
                         <input asp-for="Isbn" class="form-control" />
                     </div>
-                    <div class="col-sm-6">
-                        <label asp-for="PublishedAt" class="form-label">Published Date</label>
-                        <input asp-for="PublishedAt" type="date" class="form-control" />
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">Published</label>
+                        <input asp-for="PublishedAt" class="form-control" />
                     </div>
-                    <div class="col-sm-6">
-                        <label asp-for="Language" class="form-label">Language</label>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">Language</label>
                         <input asp-for="Language" class="form-control" />
                     </div>
-                    <div class="col-sm-6">
-                        <label asp-for="Series" class="form-label">Series Name</label>
-                        <input asp-for="Series" class="form-control" />
-                    </div>
-                    <div class="col-sm-6">
-                        <label asp-for="SeriesIndex" class="form-label">Series Index</label>
-                        <input asp-for="SeriesIndex" type="number" step="0.1" class="form-control" />
-                    </div>
-
-                    <div class="col-sm-6">
-                        <label asp-for="Rating" class="form-label">Rating</label>
-                        <div class="star-rating" role="radiogroup" aria-label="Rating">
-                            @for (int r = 5; r >= 1; r--)
-                            {
-                                var checkedAttr = Model.Rating.HasValue && Model.Rating.Value == r ? "checked" : "";
-                                var activeClass = Model.Rating.HasValue && Model.Rating.Value >= r ? "active" : "";
-                                <input class="star-input" type="radio" id="rating@r" name="Rating" value="@r" @checkedAttr />
-                                <label class="star-label @activeClass" for="rating@r" title="@r"><i class="fa-solid fa-star"></i></label>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="col-sm-6">
-                        <label asp-for="Tags" class="form-label">Tags (comma separated)</label>
-                        <input asp-for="Tags" class="form-control" />
-                    </div>
-                </div>
-
-                <hr class="my-3" />
-
-                <h5>Reading Progress</h5>
-                <div class="row g-3 align-items-end">
-                    <div class="col-sm-4">
-                        <label asp-for="Status" class="form-label">Status</label>
-                        <select asp-for="Status" class="form-select">
-                            <option value="unread">Unread</option>
-                            <option value="reading">Reading</option>
-                            <option value="read">Read</option>
-                        </select>
-                    </div>
-                    <div class="col-sm-4">
-                        <label asp-for="ProgressPercent" class="form-label">Progress %</label>
-                        <input asp-for="ProgressPercent" type="number" min="0" max="100" class="form-control" />
-                    </div>
-                    <div class="col-sm-4">
-                        <label asp-for="Rating" class="form-label d-block">Rating Preview</label>
-                        <div class="text-muted">@Model.Rating ?? 0</div>
-                    </div>
-
-                    <div class="col-sm-6">
-                        <label asp-for="CurrentPage" class="form-label">Current Page</label>
-                        <input asp-for="CurrentPage" type="number" min="0" class="form-control" />
-                    </div>
-                    <div class="col-sm-6">
-                        <label asp-for="TotalPages" class="form-label">Total Pages</label>
-                        <input asp-for="TotalPages" type="number" min="0" class="form-control" />
-                    </div>
-
-                    <div class="col-sm-6">
-                        <label asp-for="StartedAt" class="form-label">Started At</label>
-                        <input asp-for="StartedAt" type="datetime-local" class="form-control" />
-                    </div>
-                    <div class="col-sm-6">
-                        <label asp-for="FinishedAt" class="form-label">Finished At</label>
-                        <input asp-for="FinishedAt" type="datetime-local" class="form-control" />
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">Total Pages</label>
+                        <input asp-for="TotalPages" type="number" class="form-control" />
                     </div>
                 </div>
 
                 <div class="mt-3">
                     <button type="submit" class="btn btn-primary">Save</button>
                     <a class="btn btn-secondary ms-2" href="/Books">Cancel</a>
+                    @if (Model.GoogleImportEnabled)
+                    {
+                        <a class="btn btn-outline-primary ms-2" href="/Books/MetadataLookup?bookId=@Model.Id">Import metadata</a>
+                    }
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-body text-center">
+                        <div class="mb-2">
+                            <img src="@(Model.ExistingCoverPath ?? "/images/placeholder-book.png")" alt="cover" style="max-width:100%;height:auto;" />
+                        </div>
+                        <div class="mb-2">
+                            <input asp-for="Cover" type="file" class="form-control form-control-sm" />
+                        </div>
+                    </div>
                 </div>
 
-                @if (Model.ErrorMessage != null)
-                {
-                    <div class="alert alert-danger mt-3">@Model.ErrorMessage</div>
-                }
-
-                @if (Model.Success)
-                {
-                    <div class="alert alert-success mt-3">Saved. <a href="/Books">Return to library</a></div>
-                }
             </div>
         </div>
     </form>
 </div>
 
 @section Scripts {
-    <script>
-        (function(){
-            // Make star labels reflect selection immediately
-            document.querySelectorAll('.star-label').forEach(function(lbl){
-                lbl.addEventListener('click', function(e){
-                    var forId = this.getAttribute('for');
-                    var input = document.getElementById(forId);
-                    if (!input) return;
-                    input.checked = true;
-
-                    // update active classes
-                    document.querySelectorAll('.star-label').forEach(function(l){ l.classList.remove('active'); l.style.color = '#ccc'; });
-
-                    // set active for all labels with value <= selected
-                    var val = parseInt(input.value, 10);
-                    document.querySelectorAll('.star-label').forEach(function(l){
-                        var num = parseInt(l.getAttribute('for').replace('rating',''));
-                        if (num <= val) { l.classList.add('active'); l.style.color = '#f5c518'; }
-                    });
-                });
-            });
-        })();
-    </script>
 }

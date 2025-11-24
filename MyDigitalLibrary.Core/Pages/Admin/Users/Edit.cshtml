@@ -1,0 +1,102 @@
+@page
+@model MyDigitalLibrary.Core.Pages.Admin.Users.EditModel
+@{
+    ViewData["Title"] = "Edit User";
+}
+
+<div class="container py-4">
+    <h2>Edit User</h2>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">@TempData["Message"]</div>
+    }
+
+    @if (Model.User == null)
+    {
+        <div class="alert alert-danger">User not found</div>
+    }
+    else
+    {
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="User.Id" />
+
+            <ul class="nav nav-tabs" id="editUserTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">Profile</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab">Features</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="billing-tab" data-bs-toggle="tab" data-bs-target="#billing" type="button" role="tab">Billing</button>
+                </li>
+            </ul>
+
+            <div class="tab-content border border-top-0 p-3" id="editUserTabsContent">
+                <div class="tab-pane fade show active" id="profile" role="tabpanel">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input class="form-control" value="@Model.User.Email" disabled />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Display Name</label>
+                        <input asp-for="User.DisplayName" class="form-control" />
+                        <span asp-validation-for="User.DisplayName" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select asp-for="User.Role" class="form-select">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input asp-for="User.IsActive" class="form-check-input" id="isActive" />
+                        <label asp-for="User.IsActive" class="form-check-label">Active</label>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="features" role="tabpanel">
+                    <h5>Features</h5>
+                    @if (!Model.Features.Any())
+                    {
+                        <div class="text-muted">No features configured for this user.</div>
+                    }
+                    else
+                    {
+                        @foreach (var f in Model.Features)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="feature_@f.Name" id="feature_@f.Name" @(f.Enabled ? "checked" : "") />
+                                <label class="form-check-label" for="feature_@f.Name">@f.Name</label>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div class="tab-pane fade" id="billing" role="tabpanel">
+                    <h5>Billing</h5>
+                    <p class="text-muted">Billing and subscription controls will be available here.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Subscription plan</label>
+                        <input class="form-control" value="Not implemented" disabled />
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <button class="btn btn-primary" type="submit">Save</button>
+                <a class="btn btn-secondary ms-2" href="/Admin/Index">Cancel</a>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+}

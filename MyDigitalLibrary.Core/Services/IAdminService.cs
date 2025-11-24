@@ -9,4 +9,7 @@ public interface IAdminService
     Task UpdateUserRoleAsync(int id, string role);
     Task UpdateUserFeaturesAsync(int id, string featuresJson);
     Task ToggleUserActiveAsync(int id, bool isActive);
+
+    // Update user profile fields
+    Task UpdateUserDisplayNameAsync(int id, string? displayName);
 }
