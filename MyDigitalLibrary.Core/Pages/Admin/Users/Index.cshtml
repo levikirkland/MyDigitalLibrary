@@ -1,0 +1,31 @@
+@page
+@model MyDigitalLibrary.Core.Pages.Admin.Users.IndexModel
+@{
+    ViewData["Title"] = "Admin - Users";
+}
+
+<div class="container py-4">
+    <h1>Users</h1>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Display Name</th>
+                <th>Books</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model.Users)
+            {
+                <tr>
+                    <td>@u.Email</td>
+                    <td>@(string.IsNullOrEmpty(u.DisplayName) ? "-" : u.DisplayName)</td>
+                    <td>@(Model.BookCounts.ContainsKey(u.Id) ? Model.BookCounts[u.Id] : 0)</td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="/Admin/Users/Edit?id=@u.Id">Edit</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -64,6 +64,12 @@ builder.Services.AddScoped<IReadingService, ReadingService>();
 // Register AdminService implementation
 builder.Services.AddScoped<IAdminService, AdminService>();
 
+// Register FeatureService
+builder.Services.AddScoped<IFeatureService, FeatureService>();
+
+// Register Google Books client and other core services
+MyDigitalLibrary.Core.Services.ServiceRegistration.AddMyCoreServices(builder.Services);
+
 // File and storage services
 builder.Services.AddScoped<IFileRepository, FileRepository>();
 builder.Services.AddScoped<IFileService, FileService>();
@@ -110,14 +116,63 @@ builder.Services.AddDataProtection()
   .PersistKeysToFileSystem(new DirectoryInfo(keyDirPath))
   .SetApplicationName("MyBookShelf");
 
-var app = builder.Build();
+// NOTE: Do not register middleware types that require the RequestDelegate constructor parameter with DI. They should be added to the pipeline with UseMiddleware<T>().
 
-// Register middleware for lock screen before authentication middleware runs
-app.UseMiddleware<LockScreenMiddleware>();
+// If started with "smoketest" run a programmatic smoke test and exit
+if (args.Length > 0 && args[0].Equals("smoketest", StringComparison.OrdinalIgnoreCase))
+{
+    var testPath = builder.Configuration["SMOKETEST_PATH"] ?? (args.Length > 1 ? args[1] : null);
+    if (string.IsNullOrEmpty(testPath) || !Directory.Exists(testPath))
+    {
+        Console.WriteLine("Usage: dotnet run -- smoketest <calibre-folder-path>  OR set SMOKETEST_PATH in configuration.");
+        return 0;
+    }
+
+    var appForTest = builder.Build();
+    using var scope = appForTest.Services.CreateScope();
+    var importer = scope.ServiceProvider.GetRequiredService<CalibreImporter>();
+    var testLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        testLogger.LogInformation("Starting smoketest import for {Path}", testPath);
+        var result = await importer.ImportFromDirectoryAsync(testPath, userId: 1, importCovers: true, cancellation: CancellationToken.None);
+        Console.WriteLine($"Smoketest completed: Imported={result.Imported}, Skipped={result.Skipped}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        testLogger.LogError(ex, "Smoketest failed");
+        Console.WriteLine("Smoketest failed: " + ex.Message);
+        return 2;
+    }
+}
+
+var app = builder.Build();
 
 // Log the data protection key path at startup so you can verify it's stable between runs
 var appLogger = app.Services.GetRequiredService<ILogger<Program>>();
 appLogger.LogInformation("DataProtection keys directory: {KeyDir}", keyDirPath);
+
+// Ensure user 1 exists and has admin role (seed)
+try
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var user = await db.Users.FirstOrDefaultAsync(u => u.Id == 1);
+    if (user != null && user.Role != "admin")
+    {
+        user.Role = "admin";
+        user.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        logger.LogInformation("Seeded user {UserId} as admin", user.Id);
+    }
+}
+catch (Exception ex)
+{
+    appLogger.LogWarning(ex, "Failed to seed admin user");
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -134,6 +189,10 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
+
+// Add claims refresh middleware after authentication so we can re-issue cookie on role change
+app.UseMiddleware<ClaimsRefreshMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers(); // map API controllers

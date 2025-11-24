@@ -5,6 +5,7 @@ using MyDigitalLibrary.Core.Services;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 public class LoginModel : PageModel
 {
@@ -54,7 +55,20 @@ public class LoginModel : PageModel
                     claims.Add(new Claim(ClaimTypes.Name, result.User.Email));
                 }
 
-                var identity = new ClaimsIdentity(claims, "jwt");
+                // Ensure name identifier claim exists (some auth stacks expect ClaimTypes.NameIdentifier)
+                if (!claims.Any(c => c.Type == ClaimTypes.NameIdentifier) && result.User != null)
+                {
+                    claims.Add(new Claim(ClaimTypes.NameIdentifier, result.User.Id.ToString()));
+                }
+
+                // Ensure role claim exists
+                if (!claims.Any(c => c.Type == ClaimTypes.Role))
+                {
+                    var role = result.User?.Role ?? "user";
+                    claims.Add(new Claim(ClaimTypes.Role, role));
+                }
+
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);
 
                 // Make cookie persistent so it survives browser restarts / app restarts
@@ -64,7 +78,7 @@ public class LoginModel : PageModel
                     ExpiresUtc = RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddDays(14)
                 };
 
-                await HttpContext.SignInAsync("Cookies", principal, authProperties);
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
 
                 // Redirect to the library page
                 return RedirectToPage("/Books/Index");
@@ -86,7 +100,7 @@ public class LoginModel : PageModel
 
     public async Task<IActionResult> OnPostLogout()
     {
-        await HttpContext.SignOutAsync("Cookies");
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Redirect("/");
     }
 }

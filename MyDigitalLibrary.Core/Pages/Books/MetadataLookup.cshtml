@@ -1,0 +1,251 @@
+@page
+@model MyDigitalLibrary.Core.Pages.Books.MetadataLookupModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Metadata Lookup";
+}
+
+<div class="container py-4">
+    <h2>Metadata Lookup</h2>
+
+    @if (!Model.Allowed)
+    {
+        <div class="alert alert-danger">Metadata lookup is not enabled for your account.</div>
+    }
+    else
+    {
+        <form id="antiforgeryForm">@Html.AntiForgeryToken()</form>
+        <div class="row">
+            <div class="col-md-5">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <label class="form-label">Search title</label>
+                        <div class="input-group mb-2">
+                            <input id="q" class="form-control form-control-lg" placeholder="Enter title to search" value="@(Model.CurrentBook?.Title ?? string.Empty)" />
+                            <button id="searchBtn" class="btn btn-primary">Search</button>
+                        </div>
+                        <label class="form-label">Author (optional)</label>
+                        <div class="input-group mb-2">
+                            <input id="author" class="form-control" placeholder="Author name (optional)" value="@(Model.CurrentBook?.Authors ?? string.Empty)" />
+                        </div>
+                        <p class="text-muted small">Select a result to preview and pick fields to import.</p>
+                        <div id="results" style="max-height:500px; overflow:auto;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div id="previewCard" class="card d-none">
+                    <div class="card-body">
+                        <div class="d-flex mb-3">
+                            <div style="flex:1">
+                                <h4 id="previewTitle" class="mb-1"></h4>
+                                <div id="previewAuthors" class="text-muted small mb-2"></div>
+                                <div id="previewDescription" class="text-muted small mb-2" style="max-height:120px;overflow:auto;"></div>
+                            </div>
+                            <div id="previewCoverWrap" style="width:140px;flex:0 0 140px; display:block;">
+                                <img id="previewCover" src="/images/placeholder-book.png" style="width:120px;height:auto;" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="mb-2"><strong>Field</strong></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="f_title" data-field="title"><label class="form-check-label" for="f_title">Title</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="f_authors" data-field="authors"><label class="form-check-label" for="f_authors">Authors</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="f_description" data-field="description"><label class="form-check-label" for="f_description">Description</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="f_publisher" data-field="publisher"><label class="form-check-label" for="f_publisher">Publisher</label></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-2"><strong>Field</strong></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="f_publishedAt" data-field="publishedAt"><label class="form-check-label" for="f_publishedAt">Published Date</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="f_pageCount" data-field="pageCount"><label class="form-check-label" for="f_pageCount">Page Count</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="f_language" data-field="language"><label class="form-check-label" for="f_language">Language</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="f_isbn" data-field="isbn"><label class="form-check-label" for="f_isbn">ISBN</label></div>
+                            </div>
+                        </div>
+
+                        <hr />
+                        <div>
+                            <div class="mb-2"><strong>Diff Preview</strong></div>
+                            <div id="diffPreview" style="max-height:240px; overflow:auto;"></div>
+                        </div>
+
+                        <div class="mt-3 text-end">
+                            <button id="applyBtn" class="btn btn-success btn-lg">Apply Selected</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="noPreview" class="card">
+                    <div class="card-body text-muted">Select a search result to preview metadata and choose fields to import.</div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Toast container -->
+<div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080;"></div>
+
+@section Scripts {
+    <script>
+        // serialize current book for client-side diff (may be null)
+        var _currentBook = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CurrentBook));
+    </script>
+    <script>
+    (function(){
+        function escapeHtml(s){
+            var str = s == null ? '' : String(s);
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
+        function showToast(message, type) {
+            var container = document.getElementById('toastContainer');
+            if (!container) return;
+            var variant = 'info';
+            if (type === 'success') variant = 'success';
+            if (type === 'error' || type === 'danger') variant = 'danger';
+
+            var toastEl = document.createElement('div');
+            toastEl.className = 'toast align-items-center text-white bg-' + variant + ' border-0';
+            toastEl.setAttribute('role', 'alert');
+            toastEl.setAttribute('aria-live', 'assertive');
+            toastEl.setAttribute('aria-atomic', 'true');
+
+            toastEl.innerHTML = '<div class="d-flex"><div class="toast-body">' + escapeHtml(message) + '</div>' +
+                '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+
+            container.appendChild(toastEl);
+            var bs = new bootstrap.Toast(toastEl, { delay: 4000 });
+            bs.show();
+            toastEl.addEventListener('hidden.bs.toast', function(){ toastEl.remove(); });
+        }
+
+        var searchBtn = document.getElementById('searchBtn');
+        var qInput = document.getElementById('q');
+        var authorInput = document.getElementById('author');
+        var resultsEl = document.getElementById('results');
+        var previewCard = document.getElementById('previewCard');
+        var noPreview = document.getElementById('noPreview');
+        var diffEl = document.getElementById('diffPreview');
+
+        // store last results for selection
+        window._gb_results = [];
+
+        function getAntiForgeryToken() {
+            var el = document.querySelector('#antiforgeryForm input[name="__RequestVerificationToken"]');
+            return el ? el.value : null;
+        }
+
+        async function search(q, author){
+            resultsEl.innerHTML = '<div class="text-center p-3">Searching...</div>';
+            var url = '?handler=Search&title=' + encodeURIComponent(q || '') + '&author=' + encodeURIComponent(author || '');
+            var r = await fetch(url, { credentials: 'same-origin' });
+            if(!r.ok){ resultsEl.innerHTML = '<div class="text-danger p-3">Search failed</div>'; return; }
+            var data = await r.json();
+            window._gb_results = data || [];
+            resultsEl.innerHTML = '';
+            window._gb_results.forEach(function(it, idx){
+                var title = it.volumeInfo?.title || 'No title';
+                var authors = it.volumeInfo?.authors ? it.volumeInfo.authors.join(', ') : '';
+                var item = document.createElement('div');
+                item.className = 'p-2 d-flex align-items-start gap-2 border-bottom';
+                item.innerHTML = `
+                    <div style="flex:1">
+                      <div class="fw-semibold">${escapeHtml(title)}</div>
+                      <div class="small text-muted">${escapeHtml(authors)}</div>
+                    </div>
+                    <div>
+                      <button class="btn btn-sm btn-primary selectBtn" data-idx="${idx}">Select</button>
+                    </div>
+                `;
+                item.querySelector('.selectBtn').addEventListener('click', function(){
+                    var i = this.getAttribute('data-idx');
+                    if(!i) return;
+                    var parsed = parseInt(i, 10);
+                    if(isNaN(parsed)) return;
+                    selectItem(window._gb_results[parsed]);
+                });
+                resultsEl.appendChild(item);
+            });
+        }
+
+        function selectItem(it){
+            try {
+                // populate preview
+                document.getElementById('previewTitle').textContent = it.volumeInfo?.title || '';
+                document.getElementById('previewAuthors').textContent = it.volumeInfo?.authors ? it.volumeInfo.authors.join(', ') : '';
+                document.getElementById('previewDescription').textContent = it.volumeInfo?.description || '';
+
+                // cover if available - prefer HTTPS when possible
+                var thumb = it.volumeInfo?.thumbnailLink || it.volumeInfo?.smallThumbnailLink || (it.volumeInfo?.imageLinks && (it.volumeInfo.imageLinks.thumbnail || it.volumeInfo.imageLinks.smallThumbnail)) || '';
+                if(thumb){
+                    if (thumb.indexOf('http:') === 0) thumb = 'https:' + thumb.substring(5);
+                    document.getElementById('previewCover').src = thumb;
+                    document.getElementById('previewCoverWrap').style.display = 'block';
+                } else {
+                    document.getElementById('previewCover').src = '/images/placeholder-book.png';
+                }
+
+                // populate diff preview using serialized current book
+                var cb = window._currentBook || {};
+                var lines = [];
+                function addLine(label, oldVal, newVal){
+                    var oldStr = oldVal == null ? '' : String(oldVal);
+                    var newStr = newVal == null ? '' : String(newVal);
+                    var changed = oldStr.trim() !== newStr.trim();
+                    var cls = changed ? 'text-danger' : 'text-muted';
+                    lines.push(`<div><strong>${escapeHtml(label)}:</strong> <span class="${cls}">${escapeHtml(oldStr)}</span> ? <span class="text-success">${escapeHtml(newStr)}</span></div>`);
+                }
+
+                addLine('Title', cb?.Title || '', it.volumeInfo?.title || '');
+                addLine('Authors', cb?.Authors || '', it.volumeInfo?.authors ? it.volumeInfo.authors.join(', ') : '');
+                addLine('Description', cb?.Description || '', it.volumeInfo?.description || '');
+                addLine('Publisher', cb?.Publisher || '', it.volumeInfo?.publisher || '');
+                addLine('Published', cb?.PublishedAt || '', it.volumeInfo?.publishedDate || '');
+                addLine('Pages', cb?.TotalPages || '', it.volumeInfo?.pageCount || '');
+                addLine('Language', cb?.Language || '', it.volumeInfo?.language || '');
+                addLine('ISBN', cb?.Isbn || '', (it.volumeInfo?.industryIdentifiers||[]).map(x=>x.identifier).join(', '));
+                diffEl.innerHTML = lines.join('\n');
+
+                // check all fields by default
+                ['f_title','f_authors','f_description','f_publisher','f_publishedAt','f_pageCount','f_language','f_isbn'].forEach(function(id){ var cbx=document.getElementById(id); if(cbx) cbx.checked=true; });
+
+                previewCard.classList.remove('d-none');
+                noPreview.classList.add('d-none');
+
+                // store selected item on previewCard
+                previewCard._selected = it;
+            }
+            catch (err) {
+                console.error('selectItem error', err);
+                showToast('Failed to select item', 'error');
+            }
+        }
+
+        document.getElementById('applyBtn').addEventListener('click', async function(){
+            var it = document.getElementById('previewCard')._selected;
+            if(!it) { showToast('No item selected', 'error'); return; }
+            var selected = Array.from(document.querySelectorAll('#previewCard input[type=checkbox][data-field]:checked')).map(cb=> cb.getAttribute('data-field'));
+            var payload = { google: it, selectedFields: selected };
+            var token = getAntiForgeryToken();
+            var headers = { 'Content-Type':'application/json' };
+            if(token) headers['RequestVerificationToken'] = token;
+            // include bookId in query so handler can bind the correct target book
+            var resp = await fetch('?handler=ApplySelected&bookId=' + encodeURIComponent(@Model.BookId), { method: 'POST', headers: headers, body: JSON.stringify(payload), credentials: 'same-origin' });
+            if(!resp.ok){ var txt = await resp.text(); console.error('apply failed', resp.status, txt); showToast('Apply failed: ' + resp.status, 'error'); return; }
+            var j = await resp.json();
+            if(j.success){ showToast('Metadata imported', 'success'); setTimeout(function(){ location.href = '/Books/Edit/' + @(Model.BookId); }, 1200); } else { showToast('Import failed', 'error'); }
+        });
+
+        searchBtn.addEventListener('click', function(e){ e.preventDefault(); search(qInput.value, authorInput.value); });
+
+        // optional: auto-run search on load when title is present
+        document.addEventListener('DOMContentLoaded', function(){
+            try{
+                var initial = qInput.value && qInput.value.trim();
+                if(initial){ search(initial, authorInput.value); }
+            } catch(e) { /* ignore */ }
+        });
+    })();
+    </script>
+}

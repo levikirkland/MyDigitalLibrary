@@ -22,6 +22,9 @@ public class AppDbContext : DbContext
     public DbSet<BookCollectionEntity> BookCollections { get; set; } = default!;
     public DbSet<CollectionRuleEntity> CollectionRules { get; set; } = default!;
 
+    // Feature flags
+    public DbSet<FeatureEntity> Features { get; set; } = default!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UserEntity>().HasIndex(u => u.Email).IsUnique();
@@ -35,5 +38,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<BookCollectionEntity>().HasIndex(bc => new { bc.BookId, bc.CollectionId }).IsUnique();
         modelBuilder.Entity<CollectionRuleEntity>().HasIndex(r => new { r.CollectionId, r.RuleType, r.RuleValue });
+
+        modelBuilder.Entity<FeatureEntity>().HasIndex(f => new { f.UserId, f.Name }).IsUnique();
     }
 }

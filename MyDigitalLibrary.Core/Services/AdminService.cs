@@ -21,6 +21,7 @@ public class AdminService : IAdminService
         var user = await _db.Users.FindAsync(id);
         if (user == null) throw new KeyNotFoundException("User not found");
         user.Role = role;
+        user.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
     }
 
@@ -29,6 +30,7 @@ public class AdminService : IAdminService
         var user = await _db.Users.FindAsync(id);
         if (user == null) throw new KeyNotFoundException("User not found");
         user.Features = featuresJson;
+        user.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
     }
 
@@ -37,6 +39,16 @@ public class AdminService : IAdminService
         var user = await _db.Users.FindAsync(id);
         if (user == null) throw new KeyNotFoundException("User not found");
         user.IsActive = isActive;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task UpdateUserDisplayNameAsync(int id, string? displayName)
+    {
+        var user = await _db.Users.FindAsync(id);
+        if (user == null) throw new KeyNotFoundException("User not found");
+        user.DisplayName = displayName;
+        user.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
     }
 }

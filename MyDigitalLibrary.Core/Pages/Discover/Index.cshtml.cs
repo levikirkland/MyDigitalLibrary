@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using MyDigitalLibrary.Core.Services;
 using MyDigitalLibrary.Core.Models;
 using System.Security.Claims;
+using MyDigitalLibrary.Core.Data;
+using MyDigitalLibrary.Core.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace MyDigitalLibrary.Core.Pages.Discover;
 
@@ -10,11 +13,13 @@ public class IndexModel : PageModel
 {
     private readonly IBookService _bookService;
     private readonly IReviewService _reviewService;
+    private readonly AppDbContext _db;
 
-    public IndexModel(IBookService bookService, IReviewService reviewService)
+    public IndexModel(IBookService bookService, IReviewService reviewService, AppDbContext db)
     {
         _bookService = bookService;
         _reviewService = reviewService;
+        _db = db;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -26,31 +31,30 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
-        // For Discover we surface recent books from all users. For now, use books from repository filtered by query.
-        // As there's no public book flag, we'll re-use user's books across the system for demo purposes.
+        // If query provided, search public books by title/author/publisher
+        IQueryable<PublicBookEntity> q = _db.PublicBooks.OrderByDescending(p => p.UpdatedAt).Take(50);
 
-        // Simple approach: search each user's books? For demo use, fetch latest books from first user (placeholder)
-        var idClaim = User.FindFirst("userId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrWhiteSpace(Query))
+        {
+            var term = Query.Trim();
+            q = _db.PublicBooks.Where(p => EF.Functions.Like(p.Title, $"%{term}%") || EF.Functions.Like(p.Authors, $"%{term}%") || EF.Functions.Like(p.Publisher, $"%{term}%")).OrderByDescending(p => p.UpdatedAt).Take(50);
+        }
 
-        Book[] list;
-        if (!string.IsNullOrWhiteSpace(Query) && int.TryParse(idClaim, out var uid))
+        var list = await q.Select(p => new Book
         {
-            // Search within user's library as placeholder
-            list = await _bookService.SearchBooksByUserIdAsync(uid, Query);
-        }
-        else if (int.TryParse(idClaim, out var u))
-        {
-            list = await _bookService.GetBooksByUserIdAsync(u);
-        }
-        else
-        {
-            // no user - just return empty
-            list = Array.Empty<Book>();
-        }
+            Id = p.Id,
+            Title = p.Title,
+            Authors = p.Authors,
+            CoverPath = p.CoverPath,
+            Publisher = p.Publisher,
+            PublishedAt = p.PublishedAt,
+            CreatedAt = p.CreatedAt,
+            UpdatedAt = p.UpdatedAt
+        }).ToListAsync();
 
         Books = list.OrderByDescending(b => b.CreatedAt).ToList();
 
-        // Popular: Top rated books in the results
+        // Popular: Top rated books in the results (if rating present)
         Popular = Books.Where(b => b.Rating.HasValue).OrderByDescending(b => b.Rating).Take(5).ToList();
 
         // Tags: collect tags from results
