@@ -2,47 +2,22 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using MyDigitalLibrary.Core.Data;
+using MyDigitalLibrary.Core.Middleware;
 using MyDigitalLibrary.Core.Repositories; // Add this line for data access
 using MyDigitalLibrary.Core.Services;
 using System.Reflection;
-using MyDigitalLibrary.Core.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load user secrets in Development so sensitive values (connection strings, keys) can be stored securely
-if (builder.Environment.IsDevelopment())
-{
-    try
-    {
-        builder.Configuration.AddUserSecrets(Assembly.GetExecutingAssembly(), optional: true);
-    }
-    catch
-    {
-        // If user-secrets package isn't available or no user secrets configured, continue without failing
-    }
-}
+// Load user secrets so AZURE_SQL_CONNECTIONSTRING can be read from secrets.json in development
+builder.Configuration.AddUserSecrets(Assembly.GetExecutingAssembly());
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddControllers(); // enable API controllers
 
-// Register EF Core DbContext with SQL Server using the configured connection string
-// Prefer AZURE_SQL_CONNECTIONSTRING (user secret / env) for clarity, fall back to standard ConnectionStrings:Default
-var conn = builder.Configuration["AZURE_SQL_CONNECTIONSTRING"];
-if (string.IsNullOrEmpty(conn))
-{
-    conn = builder.Configuration.GetConnectionString("Default");
-}
-if (string.IsNullOrEmpty(conn))
-{
-    // Fallback to previous key name if present
-    conn = builder.Configuration["Default"];
-}
-
-if (string.IsNullOrEmpty(conn))
-{
-    throw new InvalidOperationException("Database connection string not configured. Set 'AZURE_SQL_CONNECTIONSTRING' in user-secrets, environment variables, or provide a 'ConnectionStrings:Default' value.");
-}
+// Read connection string from environment first, then from configuration (which includes user secrets)
+var conn = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING") ?? builder.Configuration["AZURE_SQL_CONNECTIONSTRING"];
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(conn));
@@ -126,70 +101,7 @@ builder.Services.AddDataProtection()
   .PersistKeysToFileSystem(new DirectoryInfo(keyDirPath))
   .SetApplicationName("MyBookShelf");
 
-// NOTE: Do not register middleware types that require the RequestDelegate constructor parameter with DI. They should be added to the pipeline with UseMiddleware<T>().
-
-// If started with "smoketest" run a programmatic smoke test and exit
-if (args.Length > 0 && args[0].Equals("smoketest", StringComparison.OrdinalIgnoreCase))
-{
-    var testPath = builder.Configuration["SMOKETEST_PATH"] ?? (args.Length > 1 ? args[1] : null);
-    if (string.IsNullOrEmpty(testPath) || !Directory.Exists(testPath))
-    {
-        Console.WriteLine("Usage: dotnet run -- smoketest <calibre-folder-path>  OR set SMOKETEST_PATH in configuration.");
-        return 0;
-    }
-
-    var appForTest = builder.Build();
-    using var scope = appForTest.Services.CreateScope();
-    var importer = scope.ServiceProvider.GetRequiredService<CalibreImporter>();
-    var testLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-    try
-    {
-        testLogger.LogInformation("Starting smoketest import for {Path}", testPath);
-        var result = await importer.ImportFromDirectoryAsync(testPath, userId: 1, importCovers: true, cancellation: CancellationToken.None);
-        Console.WriteLine($"Smoketest completed: Imported={result.Imported}, Skipped={result.Skipped}");
-        return 0;
-    }
-    catch (Exception ex)
-    {
-        testLogger.LogError(ex, "Smoketest failed");
-        Console.WriteLine("Smoketest failed: " + ex.Message);
-        return 2;
-    }
-}
-
 var app = builder.Build();
-
-// Log the data protection key path at startup so you can verify it's stable between runs
-var appLogger = app.Services.GetRequiredService<ILogger<Program>>();
-appLogger.LogInformation("DataProtection keys directory: {KeyDir}", keyDirPath);
-
-// Ensure user 1 exists and has admin role (seed)
-try
-{
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    var user = await db.Users.FirstOrDefaultAsync(u => u.Id == 1);
-    if (user != null && user.Role != "admin")
-    {
-        user.Role = "admin";
-        user.UpdatedAt = DateTime.UtcNow;
-        await db.SaveChangesAsync();
-        logger.LogInformation("Seeded user {UserId} as admin", user.Id);
-    }
-}
-catch (Exception ex)
-{
-    appLogger.LogWarning(ex, "Failed to seed admin user");
-}
-
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
-}
 
 app.UseHttpsRedirection();
 
