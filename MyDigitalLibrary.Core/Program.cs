@@ -14,6 +14,7 @@ if (builder.Environment.IsDevelopment())
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddControllers();
 
 var azureConn = builder.Configuration["AZURE_SQL_CONNECTIONSTRING"];
 builder.Services.AddDbContext<AppDbContext>(options =>
