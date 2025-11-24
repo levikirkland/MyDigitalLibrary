@@ -26,12 +26,22 @@ if (builder.Environment.IsDevelopment())
 builder.Services.AddRazorPages();
 builder.Services.AddControllers(); // enable API controllers
 
-// Register EF Core DbContext with SQL Server using the Default connection string from configuration
-var conn = builder.Configuration.GetConnectionString("Default");
+// Register EF Core DbContext with SQL Server using the configured connection string
+// Prefer AZURE_SQL_CONNECTIONSTRING (user secret / env) for clarity, fall back to standard ConnectionStrings:Default
+var conn = builder.Configuration["AZURE_SQL_CONNECTIONSTRING"];
 if (string.IsNullOrEmpty(conn))
 {
-    // Fallback to environment variable or other config
+    conn = builder.Configuration.GetConnectionString("Default");
+}
+if (string.IsNullOrEmpty(conn))
+{
+    // Fallback to previous key name if present
     conn = builder.Configuration["Default"];
+}
+
+if (string.IsNullOrEmpty(conn))
+{
+    throw new InvalidOperationException("Database connection string not configured. Set 'AZURE_SQL_CONNECTIONSTRING' in user-secrets, environment variables, or provide a 'ConnectionStrings:Default' value.");
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
