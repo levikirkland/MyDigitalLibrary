@@ -1,5 +1,6 @@
 ﻿@page
 @using Microsoft.AspNetCore.Http
+@model MyDigitalLibrary.Core.Pages.IndexModel
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "Home";
@@ -54,5 +55,15 @@
     <div class="mt-4">
         <a href="/Account/Register" class="btn btn-primary me-2">Create an account</a>
         <a href="/Account/Login" class="btn btn-outline-primary">Sign in</a>
+    </div>
+
+    <div class="mt-4 text-start container">
+        <div class="card">
+            <div class="card-body small text-muted">
+                <div><strong>Environment:</strong> @Model.EnvironmentName</div>
+                <div><strong>AZURE_SQL_CONNECTIONSTRING:</strong> @(Model.HasAzureSqlConnection ? Model.AzureSqlPreview : "(not set)")</div>
+                <div><strong>Default connection:</strong> @(Model.HasDefaultConnection ? Model.DefaultConnectionPreview : "(not set)")</div>
+            </div>
+        </div>
     </div>
 </div>
