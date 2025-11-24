@@ -1,39 +1,27 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using MyDigitalLibrary.Core.Data;
-using MyDigitalLibrary.Core.Middleware;
 using MyDigitalLibrary.Core.Repositories; // Add this line for data access
 using MyDigitalLibrary.Core.Services;
-using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load user secrets so AZURE_SQL_CONNECTIONSTRING can be read from secrets.json in development
-builder.Configuration.AddUserSecrets(Assembly.GetExecutingAssembly());
+// Load user-secrets in Development so local secrets are available (no effect in Production)
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets(System.Reflection.Assembly.GetExecutingAssembly(), optional: true);
+}
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddControllers(); // enable API controllers
 
-// Read connection string from environment first, then from configuration (which includes user secrets)
-var conn = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING") ?? builder.Configuration["AZURE_SQL_CONNECTIONSTRING"];
-
+var azureConn = builder.Configuration["AZURE_SQL_CONNECTIONSTRING"];
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(conn));
+    options.UseSqlServer(azureConn, sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
+// Simple default cookie authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-    {
-        options.Cookie.Name = "MyBookShelf.Auth";
-        options.ExpireTimeSpan = TimeSpan.FromDays(14);
-        options.SlidingExpiration = true;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.HttpOnly = true;
-        options.LoginPath = "/Account/Login";
-        options.LogoutPath = "/Account/Logout";
-        // options.Cookie.Domain = "yourdomain.com"; // set if needed
-    });
+    .AddCookie();
 
 // Register MyDigitalLibraryClient and IHttpContextAccessor
 builder.Services.AddHttpContextAccessor();
@@ -53,21 +41,17 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IFeatureService, FeatureService>();
 
 // Register Google Books client and other core services
-MyDigitalLibrary.Core.Services.ServiceRegistration.AddMyCoreServices(builder.Services);
+ServiceRegistration.AddMyCoreServices(builder.Services);
 
 // File and storage services
 builder.Services.AddScoped<IFileRepository, FileRepository>();
 builder.Services.AddScoped<IFileService, FileService>();
 // Choose storage implementation depending on configuration (secrets will be read here in Development)
-var azureConn = builder.Configuration["AZURE_STORAGE_CONNECTION_STRING"] ?? builder.Configuration.GetConnectionString("AzureStorage");
-if (!string.IsNullOrEmpty(azureConn))
-{
-    builder.Services.AddSingleton<IStorageService, AzureBlobStorageService>();
-}
-else
-{
-    builder.Services.AddSingleton<IStorageService, LocalStorageService>();
-}
+var blobConn = builder.Configuration["AZURE_STORAGE_CONNECTION_STRING"] ?? builder.Configuration.GetConnectionString("AzureStorage");
+
+
+builder.Services.AddSingleton<IStorageService, AzureBlobStorageService>();
+
 
 // Register importer
 builder.Services.AddScoped<CalibreImporter>();
@@ -82,25 +66,6 @@ builder.Services.AddScoped<MyDigitalLibrary.Core.Services.ICollectionService, My
 // Register review service
 builder.Services.AddScoped<MyDigitalLibrary.Core.Services.IReviewService, MyDigitalLibrary.Core.Services.ReviewService>();
 
-// Configure data protection keys directory (create folder and allow override via config)
-var keysPathFromConfig = builder.Configuration["DataProtection:KeyPath"];
-var keyDirPath = !string.IsNullOrEmpty(keysPathFromConfig)
-    ? keysPathFromConfig
-    : Path.Combine(builder.Environment.ContentRootPath, "DataProtectionKeys");
-
-try
-{
-    Directory.CreateDirectory(keyDirPath);
-}
-catch (Exception ex)
-{
-    // If directory creation fails, continue but log when app builds (logger not available yet). The folder may need manual creation.
-}
-
-builder.Services.AddDataProtection()
-  .PersistKeysToFileSystem(new DirectoryInfo(keyDirPath))
-  .SetApplicationName("MyBookShelf");
-
 var app = builder.Build();
 
 app.UseHttpsRedirection();
@@ -111,9 +76,6 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
-
-// Add claims refresh middleware after authentication so we can re-issue cookie on role change
-app.UseMiddleware<ClaimsRefreshMiddleware>();
 
 app.UseAuthorization();
 
