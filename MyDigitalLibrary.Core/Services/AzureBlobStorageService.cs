@@ -3,6 +3,8 @@ using Azure.Storage.Sas;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.StaticFiles;
 using Azure.Storage.Blobs.Models;
+using Azure;
+using Microsoft.Extensions.Logging;
 
 namespace MyDigitalLibrary.Core.Services;
 
@@ -15,16 +17,26 @@ public class AzureBlobStorageService : IStorageService
     private readonly IWebHostEnvironment _env;
     private readonly IConfiguration _config;
     private readonly FileExtensionContentTypeProvider _contentTypeProvider = new FileExtensionContentTypeProvider();
+    private readonly ILogger<AzureBlobStorageService> _log;
 
-    public AzureBlobStorageService(IConfiguration config, IWebHostEnvironment env)
+    public AzureBlobStorageService(IConfiguration config, IWebHostEnvironment env, ILogger<AzureBlobStorageService> log)
     {
         _env = env;
         _config = config;
+        _log = log;
         var conn = config["AZURE_STORAGE_CONNECTION_STRING"] ?? string.Empty;
         var containerName = config["AZURE_STORAGE_CONTAINER_COVERS"] ?? "bookshelf";
         _blobService = new BlobServiceClient(conn);
         _defaultContainer = _blobService.GetBlobContainerClient(containerName);
-        _defaultContainer.CreateIfNotExists();
+        try
+        {
+            _defaultContainer.CreateIfNotExists();
+        }
+        catch (RequestFailedException ex)
+        {
+            // If we don't have permission to create the container, log a warning but continue. Operations may still succeed if the container already exists and permissions allow it.
+            _log.LogWarning(ex, "Failed to create or access default blob container '{Container}'. Continuing without creating it.", containerName);
+        }
 
         // Try to parse account name/key from connection string for SAS generation
         var mName = Regex.Match(conn, "AccountName=([^;]+)", RegexOptions.IgnoreCase);
@@ -37,7 +49,14 @@ public class AzureBlobStorageService : IStorageService
     {
         if (string.IsNullOrWhiteSpace(containerName)) return _defaultContainer;
         var c = _blobService.GetBlobContainerClient(containerName);
-        c.CreateIfNotExists();
+        try
+        {
+            c.CreateIfNotExists();
+        }
+        catch (RequestFailedException ex)
+        {
+            _log.LogWarning(ex, "Failed to create or access blob container '{Container}'. Continuing and assuming it exists.", containerName);
+        }
         return c;
     }
 
