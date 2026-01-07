@@ -1,5 +1,5 @@
 # MyDigialLibrary
-
+Created in Early Release of VS 2026 - notice the .slnx for the solution. You will need to convert down to .Net 9 to use VS 2022 or lower.
 [![Azure](https://img.shields.io/badge/Azure-0089D6?logo=microsoft-azure&logoColor=white)](https://azure.microsoft.com/)
 [![Azure Blob Storage](https://img.shields.io/badge/Azure%20Blob%20Storage-3366CC?logo=microsoft-azure&logoColor=white)](https://docs.microsoft.com/en-us/azure/storage/blobs/)
 [![Azure SQL](https://img.shields.io/badge/Azure%20SQL-0078D4?logo=microsoft-sql-server&logoColor=white)](https://docs.microsoft.com/en-us/azure/azure-sql/)
